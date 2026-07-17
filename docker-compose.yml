@@ -23,13 +23,13 @@ services:
       timeout: 5s
       retries: 10
 
-  product-service:
-    image: product-service:latest
+  product-service-v1:
+    image: product-service:v1
 
     build:
       context: ./product-service
 
-    container_name: product-service-container
+    container_name: product-service-v1
     restart: unless-stopped
 
     depends_on:
@@ -46,6 +46,29 @@ services:
 
     networks:
       - medicine-network
+  product-service-v2:
+    image: product-service:v2
+    
+    build:
+      context: ./product-service
+
+    container_name: product-service-v2
+    restart: unless-stopped
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/${PRODUCT_DB}?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+
+    ports:
+      - "8083:8081"
+
+    networks:
+      - medicine-network
 
   inventory-service:
     image: inventory-service:latest
@@ -59,14 +82,14 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-      product-service:
+      product-service-v1:
         condition: service_started
 
     environment:
       DB_URL: jdbc:mysql://mysql:3306/${INVENTORY_DB}?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
-      PRODUCT_SERVICE_URL: http://product-service:8081
+      PRODUCT_SERVICE_URL: http://product-service-v1:8081
 
     ports:
       - "${INVENTORY_PORT}:8082"
@@ -79,9 +102,11 @@ services:
     restart: unless-stopped
 
     depends_on:
-      product-service:
+      product-service-v1:
         condition: service_started
       inventory-service:
+        condition: service_started
+      product-service-v2:
         condition: service_started
 
     ports:
