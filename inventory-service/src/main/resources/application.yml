@@ -14,6 +14,15 @@ spring:
         format_sql: true
 server:
   port: ${SERVER_PORT:8082}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

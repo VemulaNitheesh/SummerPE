@@ -4,6 +4,7 @@ import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.*;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.dao.DataIntegrityViolationException;
 import java.time.Instant;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -20,6 +21,8 @@ public class GlobalExceptionHandler {
     ResponseEntity<ApiError> handleConflict(DuplicateResourceException ex) { return build(HttpStatus.CONFLICT, ex.getMessage(), Map.of()); }
     @ExceptionHandler(InsufficientInventoryException.class)
     ResponseEntity<ApiError> handleInsufficientInventory(InsufficientInventoryException ex) { return build(HttpStatus.CONFLICT, ex.getMessage(), Map.of()); }
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    ResponseEntity<ApiError> handleDataIntegrityViolation(DataIntegrityViolationException ex) { return build(HttpStatus.CONFLICT, "Inventory already exists for this product", Map.of()); }
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex) {
         Map<String, String> errors = ex.getBindingResult().getFieldErrors().stream().collect(Collectors.toMap(e -> e.getField(), e -> e.getDefaultMessage(), (a, b) -> a));

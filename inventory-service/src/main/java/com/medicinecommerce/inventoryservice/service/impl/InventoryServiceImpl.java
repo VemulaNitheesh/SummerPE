@@ -9,6 +9,7 @@ import com.medicinecommerce.inventoryservice.service.InventoryService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientResponseException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.ResourceAccessException;
 import java.util.List;
 
@@ -31,6 +32,7 @@ public class InventoryServiceImpl implements InventoryService {
     public InventoryResponse update(Long id, InventoryRequest request) {
         Inventory inventory = findById(id);
         if (!inventory.getProductId().equals(request.productId()) && repository.existsByProductId(request.productId())) throw new DuplicateResourceException("Inventory already exists for product id: " + request.productId());
+        if (!inventory.getProductId().equals(request.productId())) verifyProductExists(request.productId());
         apply(request, inventory); return toResponse(repository.save(inventory));
     }
     @Override @Transactional public void delete(Long id) { repository.delete(findById(id)); }
@@ -65,6 +67,8 @@ public class InventoryServiceImpl implements InventoryService {
             if (ex.getStatusCode().value() == 404) throw new ProductNotFoundException(productId);
             throw new ProductServiceUnavailableException();
         } catch (ResourceAccessException ex) {
+            throw new ProductServiceUnavailableException();
+        } catch (RestClientException ex) {
             throw new ProductServiceUnavailableException();
         }
     }
