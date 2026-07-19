@@ -1,6 +1,7 @@
 # Inventory Service
 
-Standalone Spring Boot service that manages inventory quantities only. Product data is neither stored nor retrieved.
+Spring Boot service that manages inventory quantities only. Product details are
+not stored; product IDs are verified through Product Service when inventory is created or reassigned.
 
 ## Run
 

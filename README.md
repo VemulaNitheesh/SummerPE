@@ -1,8 +1,8 @@
 # Medicine E-commerce Prototype
 
 A local microservices prototype for a medicine catalogue and inventory system.
-It demonstrates service versioning, reverse-proxy routing, service-to-service
-communication, containerised deployment, health checks, and Ansible automation.
+It demonstrates reverse-proxy routing, service-to-service communication,
+containerised deployment, health checks, and Ansible automation.
 
 ## Architecture
 
@@ -10,33 +10,34 @@ communication, containerised deployment, health checks, and Ansible automation.
 Client
   |
   +-- http://localhost:8090 (Nginx gateway)
-        |-- /api/v1/products... and /api/v1/version -> product-service v2
-        `-- /api/v1/inventories...                    -> inventory-service
+        |-- /api/v1/products... -> product-service
+        |-- /api/v1/inventories... -> inventory-service
+        `-- /api/v1/orders... -> order-service
 
-product-service v1 (legacy): localhost:8081
-product-service v2 (current): localhost:8083
+product-service:                localhost:8081
 inventory-service:              localhost:8082
+order-service:                  localhost:8083
 MySQL:                           internal Docker network only
 ```
 
-`product-service-v1` is a supplied legacy image used to demonstrate versioned
-services. `product-service-v2` is built from this repository and is the version
-exposed by Nginx. Inventory validates product IDs through the Nginx gateway, so
-it communicates with the active product-service version rather than directly
-with v1.
+The Product Service is built from this repository and exposed by Nginx.
+Inventory validates product IDs by calling Product Service over the internal
+Docker network.
+Order Service validates products, reserves inventory, and persists confirmed
+orders through the same internal network.
 
 ## Services and endpoints
 
 | Service | Direct URL | Gateway URL | Purpose |
 | --- | --- | --- | --- |
-| Product v1 (legacy) | `http://localhost:8081` | Not routed | Legacy comparison image |
-| Product v2 | `http://localhost:8083` | `http://localhost:8090/api/v1/products` | Product catalogue |
+| Product | `http://localhost:8081` | `http://localhost:8090/api/v1/products` | Product catalogue |
 | Inventory | `http://localhost:8082` | `http://localhost:8090/api/v1/inventories` | Available and reserved stock |
+| Order | `http://localhost:8083` | `http://localhost:8090/api/v1/orders` | Order orchestration |
 | Nginx | `http://localhost:8090` | — | Routes public API traffic |
 
 Nginx uses path prefixes, not one rule per endpoint. For example,
 `/api/v1/products`, `/api/v1/products/1`, and
-`/api/v1/products/search?name=para` all reach product v2. Likewise, all
+`/api/v1/products/search?name=para` all reach Product Service. Likewise, all
 `/api/v1/inventories...` endpoints reach inventory-service.
 
 ## Health checks
@@ -44,14 +45,12 @@ Nginx uses path prefixes, not one rule per endpoint. For example,
 The current services expose Spring Boot Actuator health endpoints:
 
 ```bash
-curl http://localhost:8083/actuator/health  # product-service v2
+curl http://localhost:8081/actuator/health  # product-service
 curl http://localhost:8082/actuator/health  # inventory-service
+curl http://localhost:8083/actuator/health  # order-service
 ```
 
 Both should return a JSON response whose `status` is `UP`.
-
-Product v1 on port `8081` is an old prebuilt image and does not contain the
-Actuator dependency. Do not use `/actuator/health` on v1 as a deployment check.
 
 ## Prerequisites
 
@@ -60,9 +59,7 @@ Actuator dependency. Do not use `/actuator/health` on v1 as a deployment check.
 - Java 21 and Maven, for a local/Ansible build
 - Ansible, when using the deployment playbook
 
-The environment variables are provided in `.env`. The `product-service:v1`
-image must already be present locally because its source is intentionally not
-included in this repository.
+The environment variables are provided in `.env`.
 
 ## Run with Ansible (recommended)
 
@@ -72,9 +69,9 @@ From the repository root:
 ansible-playbook -i ansible/inventory.ini ansible/deploy.yml
 ```
 
-The playbook packages both Spring Boot applications, builds the v2 and
-inventory images, starts the Compose stack, waits for both health endpoints,
-and confirms that Nginx can serve the inventory API.
+The playbook packages all Spring Boot applications, builds their images, starts
+the Compose stack, waits for health endpoints, and confirms that Nginx can
+serve the inventory API.
 
 ## Run with Docker Compose
 
@@ -83,6 +80,7 @@ Build the Java JARs, then start the stack:
 ```bash
 (cd product-service && mvn -DskipTests package)
 (cd inventory-service && mvn -DskipTests package)
+(cd order-service && mvn -DskipTests package)
 docker-compose up -d --build
 ```
 
@@ -90,9 +88,9 @@ Check containers and verify the deployment:
 
 ```bash
 docker-compose ps
-curl http://localhost:8083/actuator/health
+curl http://localhost:8081/actuator/health
 curl http://localhost:8082/actuator/health
-curl http://localhost:8090/api/v1/version
+curl http://localhost:8083/actuator/health
 curl http://localhost:8090/api/v1/inventories
 ```
 
@@ -120,10 +118,19 @@ curl -X POST http://localhost:8090/api/v1/inventories \
   -d '{"productId":1,"availableQuantity":100,"reservedQuantity":0}'
 ```
 
+Create an order. The Order Service validates product `1`, reserves inventory,
+calculates the total, and saves the confirmed order:
+
+```bash
+curl -X POST http://localhost:8090/api/v1/orders \
+  -H 'Content-Type: application/json' \
+  -d '{"customerName":"Asha Kumar","customerEmail":"asha@example.com","productId":1,"quantity":2}'
+```
+
 ## Prototype notes
 
 - MySQL is not published to the host; only containers in the Docker network can access it.
-- Nginx exposes the current product version (v2). Calls to port `8081` bypass the gateway and target legacy v1 directly.
+- Nginx routes product, inventory, and order requests to their respective services.
 - A new endpoint underneath an existing prefix is automatically proxied. For example, a new `/api/v1/products/featured` endpoint needs no Nginx change.
 - A new top-level service path, such as `/api/v1/orders`, requires one new Nginx route to the orders service.
 - The Ansible playbook checks the deployment while it runs. It is not a long-running monitor and does not perform delayed rollback after it exits.

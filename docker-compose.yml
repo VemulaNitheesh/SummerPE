@@ -20,33 +20,13 @@ services:
       timeout: 5s
       retries: 10
 
-  product-service-v1:
-    image: product-service:v1
+  product-service:
+    image: product-service:latest
 
-    container_name: product-service-v1
-    restart: unless-stopped
-
-    depends_on:
-      mysql:
-        condition: service_healthy
-
-    environment:
-      DB_URL: jdbc:mysql://mysql:3306/${PRODUCT_DB}?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      APP_VERSION: v1
-    ports:
-      - "${PRODUCT_PORT}:8081"
-
-    networks:
-      - medicine-network
-  product-service-v2:
-    image: product-service:v2
-    
     build:
       context: ./product-service
 
-    container_name: product-service-v2
+    container_name: product-service-container
     restart: unless-stopped
 
     depends_on:
@@ -57,9 +37,8 @@ services:
       DB_URL: jdbc:mysql://mysql:3306/${PRODUCT_DB}?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
-      APP_VERSION: v2
     ports:
-      - "8083:8081"
+      - "${PRODUCT_PORT}:8081"
 
     networks:
       - medicine-network
@@ -81,24 +60,54 @@ services:
       DB_URL: jdbc:mysql://mysql:3306/${INVENTORY_DB}?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
-      PRODUCT_SERVICE_URL: http://nginx
+      PRODUCT_SERVICE_URL: http://product-service:8081
 
     ports:
       - "${INVENTORY_PORT}:8082"
 
     networks:
       - medicine-network
+  order-service:
+    image: order-service:latest
+
+    build:
+      context: ./order-service
+
+    container_name: order-service-container
+    restart: unless-stopped
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+      product-service:
+        condition: service_started
+      inventory-service:
+        condition: service_started
+
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/${ORDER_DB}?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      PRODUCT_SERVICE_URL: http://product-service:8081
+      INVENTORY_SERVICE_URL: http://inventory-service:8082
+
+    ports:
+      - "${ORDER_PORT}:8083"
+
+    networks:
+      - medicine-network
+
   nginx:
     image: nginx:latest
     container_name: nginx
     restart: unless-stopped
 
     depends_on:
-      product-service-v1:
+      product-service:
         condition: service_started
       inventory-service:
         condition: service_started
-      product-service-v2:
+      order-service:
         condition: service_started
 
     ports:

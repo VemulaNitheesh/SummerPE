@@ -13,10 +13,6 @@
       ansible.builtin.command:
         argv: [docker-compose, --version]
       changed_when: false
-    - name: Verify the legacy v1 image is present
-      ansible.builtin.command:
-        argv: [docker, image, inspect, product-service:v1]
-      changed_when: false
     - name: Package product service
       ansible.builtin.command:
         argv: [mvn, -q, -DskipTests, package]
@@ -27,9 +23,14 @@
         argv: [mvn, -q, -DskipTests, package]
         chdir: "{{ project_dir }}/inventory-service"
       changed_when: true
+    - name: Package order service
+      ansible.builtin.command:
+        argv: [mvn, -q, -DskipTests, package]
+        chdir: "{{ project_dir }}/order-service"
+      changed_when: true
     - name: Build current service images
       ansible.builtin.command:
-        argv: [docker-compose, -f, docker-compose.yml, build, product-service-v2, inventory-service]
+        argv: [docker-compose, -f, docker-compose.yml, build, product-service, inventory-service, order-service]
         chdir: "{{ project_dir }}"
       changed_when: true
     - name: Start the prototype stack
@@ -37,9 +38,9 @@
         argv: [docker-compose, -f, docker-compose.yml, up, -d]
         chdir: "{{ project_dir }}"
       changed_when: true
-    - name: Wait for product-service v2 health endpoint
+    - name: Wait for product-service health endpoint
       ansible.builtin.uri:
-        url: http://127.0.0.1:8083/actuator/health
+        url: http://127.0.0.1:8081/actuator/health
         status_code: 200
         return_content: true
       register: product_health
@@ -63,9 +64,19 @@
       until: nginx_inventory.status == 200
       retries: 12
       delay: 3
+    - name: Wait for order-service health endpoint
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8083/actuator/health
+        status_code: 200
+        return_content: true
+      register: order_health
+      until: order_health.json.status == 'UP'
+      retries: 24
+      delay: 5
     - name: Report deployed endpoints
       ansible.builtin.debug:
         msg:
-          - "Product service v2: http://localhost:8083"
+          - "Product service: http://localhost:8081"
           - "Inventory service: http://localhost:8082"
+          - "Order service: http://localhost:8083"
           - "Nginx gateway: http://localhost:8090"

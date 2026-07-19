@@ -4,7 +4,7 @@ Spring Boot service that owns product catalog information only. Inventory and st
 
 ## Run
 
-1. Start MySQL (default: `localhost:3306`, credentials `root` / `root`) or set `DB_URL`, `DB_USERNAME`, and `DB_PASSWORD`.
+1. Start MySQL (default: `localhost:3306`, credentials `root` / `admin`) or set `DB_URL`, `DB_USERNAME`, and `DB_PASSWORD`.
 2. Run `mvn spring-boot:run`.
 
 API: `http://localhost:8081/api/v1/products`  

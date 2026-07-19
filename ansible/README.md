@@ -10,15 +10,11 @@ ansible-playbook -i ansible/inventory.ini ansible/deploy.yml
 ```
 
 Prerequisites: Docker, Docker Compose (`docker-compose`), Maven, and Ansible.
-The legacy `product-service:v1` image must already exist locally because its
-source is not part of this repository. It is started for the v1/v2 prototype,
-but is not health-checked: it predates the Actuator endpoint. The current
-product service is v2 on port 8083.
 
 After a successful run:
 
 ```bash
-curl http://localhost:8083/actuator/health
+curl http://localhost:8081/actuator/health
 curl http://localhost:8082/actuator/health
 curl http://localhost:8090/api/v1/inventories
 ```

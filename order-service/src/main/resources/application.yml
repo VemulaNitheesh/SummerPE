@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: order-service
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/order_service?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:admin}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connectTimeout: ${DOWNSTREAM_CONNECT_TIMEOUT_MS:2000}
+            readTimeout: ${DOWNSTREAM_READ_TIMEOUT_MS:3000}
+      okhttp:
+        enabled: true
+server:
+  port: ${SERVER_PORT:8083}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+clients:
+  product-service:
+    url: ${PRODUCT_SERVICE_URL:http://localhost:8081}
+  inventory-service:
+    url: ${INVENTORY_SERVICE_URL:http://localhost:8082}
+

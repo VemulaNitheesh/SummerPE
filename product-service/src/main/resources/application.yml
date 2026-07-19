@@ -14,8 +14,6 @@ spring:
         format_sql: true
 server:
   port: ${SERVER_PORT:8081}
-app:
-  version: ${APP_VERSION:local}
 management:
   endpoints:
     web:
