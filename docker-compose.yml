@@ -19,6 +19,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 30s
 
   product-service:
     image: product-service:latest
@@ -39,6 +40,12 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
     ports:
       - "${PRODUCT_PORT}:8081"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
     networks:
       - medicine-network
@@ -64,6 +71,12 @@ services:
 
     ports:
       - "${INVENTORY_PORT}:8082"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8082/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
     networks:
       - medicine-network
@@ -80,9 +93,9 @@ services:
       mysql:
         condition: service_healthy
       product-service:
-        condition: service_started
+        condition: service_healthy
       inventory-service:
-        condition: service_started
+        condition: service_healthy
 
     environment:
       DB_URL: jdbc:mysql://mysql:3306/${ORDER_DB}?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
@@ -93,7 +106,12 @@ services:
 
     ports:
       - "${ORDER_PORT}:8083"
-
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8083/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     networks:
       - medicine-network
 
@@ -104,11 +122,11 @@ services:
 
     depends_on:
       product-service:
-        condition: service_started
+        condition: service_healthy
       inventory-service:
-        condition: service_started
+        condition: service_healthy
       order-service:
-        condition: service_started
+        condition: service_healthy
 
     ports:
       - "8090:80"
