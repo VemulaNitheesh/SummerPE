@@ -41,6 +41,7 @@ class OrderServiceImplTest {
     @Mock
     private InventoryClient inventoryClient;
 
+
     @Spy
     private OrderMapper mapper = new OrderMapper();
 

@@ -1,5 +1,5 @@
 package com.medicinecommerce.productservice.controller;
-
+import com.medicinecommerce.productservice.monitoring.RequestCounter;
 import com.medicinecommerce.productservice.dto.ProductResponse;
 import com.medicinecommerce.productservice.exception.GlobalExceptionHandler;
 import com.medicinecommerce.productservice.service.ProductService;
@@ -25,6 +25,8 @@ class ProductControllerTest {
     @Autowired private MockMvc mockMvc;
     @MockBean
     private ProductService productService;
+    @MockBean
+    private RequestCounter requestCounter;
 
     @Test
     void createsValidProduct() throws Exception {

@@ -32,4 +32,9 @@ public class ProductController {
     public ProductResponse update(@PathVariable @Min(1) Long id, @Valid @RequestBody ProductRequest request) { return productService.update(id, request); }
     @Operation(summary = "Delete a product") @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable @Min(1) Long id) { productService.delete(id); return ResponseEntity.noContent().build(); }
+@GetMapping("/slow")
+public List<ProductResponse> getProductsSlow() throws InterruptedException {
+    Thread.sleep(20000); // Simulate long-running request
+    return productService.getAll();
+}
 }

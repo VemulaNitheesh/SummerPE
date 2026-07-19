@@ -21,8 +21,11 @@ spring:
             readTimeout: ${DOWNSTREAM_READ_TIMEOUT_MS:3000}
       okhttp:
         enabled: true
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
 server:
   port: ${SERVER_PORT:8083}
+  shutdown: graceful
 management:
   endpoints:
     web:
