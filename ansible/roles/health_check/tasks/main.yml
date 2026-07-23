@@ -1,0 +1,89 @@
+---
+# Waits for the three Spring services of a given colour to report
+# "healthy" via Docker's HEALTHCHECK, then confirms the colour's internal
+# gateway can route to each of them.
+#
+# Requires: check_environment (e.g. "blue" or "green")
+# Uses (from vars/thresholds.yml): health_check_retries, health_check_delay
+
+- name: Wait for Product Service to become healthy ({{ check_environment }})
+  ansible.builtin.command:
+    argv:
+      - docker
+      - inspect
+      - "product-service-{{ check_environment }}"
+      - "--format={{ '{{' }}.State.Health.Status{{ '}}' }}"
+  register: product_health
+  until: product_health.stdout == "healthy"
+  retries: "{{ health_check_retries }}"
+  delay: "{{ health_check_delay }}"
+  changed_when: false
+  failed_when: product_health.stdout != "healthy"
+
+- name: Wait for Inventory Service to become healthy ({{ check_environment }})
+  ansible.builtin.command:
+    argv:
+      - docker
+      - inspect
+      - "inventory-service-{{ check_environment }}"
+      - "--format={{ '{{' }}.State.Health.Status{{ '}}' }}"
+  register: inventory_health
+  until: inventory_health.stdout == "healthy"
+  retries: "{{ health_check_retries }}"
+  delay: "{{ health_check_delay }}"
+  changed_when: false
+  failed_when: inventory_health.stdout != "healthy"
+
+- name: Wait for Order Service to become healthy ({{ check_environment }})
+  ansible.builtin.command:
+    argv:
+      - docker
+      - inspect
+      - "order-service-{{ check_environment }}"
+      - "--format={{ '{{' }}.State.Health.Status{{ '}}' }}"
+  register: order_health
+  until: order_health.stdout == "healthy"
+  retries: "{{ health_check_retries }}"
+  delay: "{{ health_check_delay }}"
+  changed_when: false
+  failed_when: order_health.stdout != "healthy"
+
+- name: Verify Product route through {{ check_environment }} internal gateway
+  ansible.builtin.command:
+    argv:
+      - docker
+      - exec
+      - "internal-gateway-{{ check_environment }}"
+      - wget
+      - --spider
+      - -q
+      - http://127.0.0.1/api/v1/products
+  changed_when: false
+
+- name: Verify Inventory route through {{ check_environment }} internal gateway
+  ansible.builtin.command:
+    argv:
+      - docker
+      - exec
+      - "internal-gateway-{{ check_environment }}"
+      - wget
+      - --spider
+      - -q
+      - http://127.0.0.1/api/v1/inventories
+  changed_when: false
+
+- name: Verify Order route through {{ check_environment }} internal gateway
+  ansible.builtin.command:
+    argv:
+      - docker
+      - exec
+      - "internal-gateway-{{ check_environment }}"
+      - wget
+      - --spider
+      - -q
+      - http://127.0.0.1/api/v1/orders
+  changed_when: false
+
+- name: "{{ check_environment | capitalize }} environment verified healthy"
+  ansible.builtin.debug:
+    msg: "{{ check_environment | capitalize }} services and internal gateway are healthy."

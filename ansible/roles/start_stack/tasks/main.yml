@@ -1,0 +1,27 @@
+---
+# Starts shared infrastructure (MySQL + public Nginx) and the target
+# colour's stack. Requires: target_environment, project_dir.
+
+- name: Start shared infrastructure (MySQL, public Nginx)
+  ansible.builtin.command:
+    argv:
+      - docker-compose
+      - -f
+      - docker-compose.yml
+      - up
+      - -d
+    chdir: "{{ project_dir }}"
+  changed_when: true
+
+- name: Start {{ target_environment | capitalize }} stack
+  ansible.builtin.command:
+    argv:
+      - docker-compose
+      - -p
+      - "{{ target_environment }}"
+      - -f
+      - "docker-compose-{{ target_environment }}.yml"
+      - up
+      - -d
+    chdir: "{{ project_dir }}"
+  changed_when: true

@@ -2,12 +2,9 @@
 Blue-Green Traffic Switch Evaluation
 =========================================
 
-Active Environment : blue
-Target Environment : green
+Active Environment : green
+Target Environment : blue
 
-Switch Start Time : 1784619193840
-Switch End Time   : 1784619195796
-
-Traffic Switch Time : 1956 ms
+Traffic Switch Time : 2409 ms
 
 =========================================

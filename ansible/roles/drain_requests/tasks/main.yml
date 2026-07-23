@@ -1,0 +1,53 @@
+---
+# Waits for in-flight requests on drain_environment's services to reach
+# zero before that colour is stopped. Queries each service directly via
+# `docker exec`, since by this point the public gateway no longer routes
+# to drain_environment and its /monitor endpoint is unreachable from outside.
+#
+# Requires: drain_environment (e.g. "blue" or "green")
+# Uses (from vars/thresholds.yml): drain_retries, drain_delay
+
+- name: Wait for Product requests to drain ({{ drain_environment }})
+  ansible.builtin.command:
+    argv:
+      - docker
+      - exec
+      - "product-service-{{ drain_environment }}"
+      - wget
+      - -qO-
+      - http://localhost:8081/monitor/active-requests
+  register: product_requests
+  until: (product_requests.stdout | from_json).activeRequests == 0
+  retries: "{{ drain_retries }}"
+  delay: "{{ drain_delay }}"
+  changed_when: false
+
+- name: Wait for Inventory requests to drain ({{ drain_environment }})
+  ansible.builtin.command:
+    argv:
+      - docker
+      - exec
+      - "inventory-service-{{ drain_environment }}"
+      - wget
+      - -qO-
+      - http://localhost:8082/monitor/active-requests
+  register: inventory_requests
+  until: (inventory_requests.stdout | from_json).activeRequests == 0
+  retries: "{{ drain_retries }}"
+  delay: "{{ drain_delay }}"
+  changed_when: false
+
+- name: Wait for Order requests to drain ({{ drain_environment }})
+  ansible.builtin.command:
+    argv:
+      - docker
+      - exec
+      - "order-service-{{ drain_environment }}"
+      - wget
+      - -qO-
+      - http://localhost:8083/monitor/active-requests
+  register: order_requests
+  until: (order_requests.stdout | from_json).activeRequests == 0
+  retries: "{{ drain_retries }}"
+  delay: "{{ drain_delay }}"
+  changed_when: false

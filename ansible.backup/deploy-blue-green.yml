@@ -1,0 +1,452 @@
+---
+- name: Blue-Green Deployment - Phase 3
+  hosts: local
+  gather_facts: false
+
+  vars:
+    project_dir: "{{ playbook_dir }}/.."
+
+  tasks:
+
+    ####################################################################
+    # Verify Prerequisites
+    ####################################################################
+    - name: Create evaluation directory
+      ansible.builtin.file:
+        path: "{{ project_dir }}/evaluation"
+        state: directory
+        mode: "0755"
+    - name: Verify Docker is available
+      ansible.builtin.command:
+        argv:
+          - docker
+          - --version
+      changed_when: false
+
+    - name: Verify Docker Compose is available
+      ansible.builtin.command:
+        argv:
+          - docker-compose
+          - --version
+      changed_when: false
+
+    ####################################################################
+    # Detect Active Environment
+    ####################################################################
+
+    - name: Read upstream configuration
+      ansible.builtin.slurp:
+        src: "{{ project_dir }}/nginx/conf.d/upstream.conf"
+      register: upstream_file
+
+    - name: Decode upstream configuration
+      ansible.builtin.set_fact:
+        upstream_content: "{{ upstream_file.content | b64decode }}"
+
+    - name: Determine active environment
+      ansible.builtin.set_fact:
+        active_environment: >-
+          {{ 'blue' if 'internal-gateway-blue' in upstream_content else 'green' }}
+
+    - name: Determine deployment target
+      ansible.builtin.set_fact:
+        target_environment: >-
+          {{ 'green' if active_environment == 'blue' else 'blue' }}
+
+    - name: Display deployment plan
+      ansible.builtin.debug:
+        msg:
+          - "Active Environment : {{ active_environment }}"
+          - "Deployment Target : {{ target_environment }}"
+
+    ####################################################################
+    # Package Services
+    ####################################################################
+
+    - name: Package Product Service
+      ansible.builtin.command:
+        argv:
+          - mvn
+          - -q
+          - -DskipTests
+          - package
+        chdir: "{{ project_dir }}/product-service"
+
+    - name: Package Inventory Service
+      ansible.builtin.command:
+        argv:
+          - mvn
+          - -q
+          - -DskipTests
+          - package
+        chdir: "{{ project_dir }}/inventory-service"
+
+    - name: Package Order Service
+      ansible.builtin.command:
+        argv:
+          - mvn
+          - -q
+          - -DskipTests
+          - package
+        chdir: "{{ project_dir }}/order-service"
+
+    ####################################################################
+    # Clean Target Environment
+    ####################################################################
+
+    - name: Stop existing {{ target_environment | capitalize }} stack
+      ansible.builtin.command:
+        argv:
+          - docker-compose
+          - -p
+          - "{{ target_environment }}"
+          - -f
+          - "docker-compose-{{ target_environment }}.yml"
+          - down
+        chdir: "{{ project_dir }}"
+      ignore_errors: true
+
+    ####################################################################
+    # Build Target Images
+    ####################################################################
+
+    - name: Build Product Service {{ target_environment | capitalize }} Image
+      ansible.builtin.command:
+        argv:
+          - docker
+          - build
+          - -t
+          - "product-service:{{ target_environment }}"
+          - .
+        chdir: "{{ project_dir }}/product-service"
+
+    - name: Build Inventory Service {{ target_environment | capitalize }} Image
+      ansible.builtin.command:
+        argv:
+          - docker
+          - build
+          - -t
+          - "inventory-service:{{ target_environment }}"
+          - .
+        chdir: "{{ project_dir }}/inventory-service"
+
+    - name: Build Order Service {{ target_environment | capitalize }} Image
+      ansible.builtin.command:
+        argv:
+          - docker
+          - build
+          - -t
+          - "order-service:{{ target_environment }}"
+          - .
+        chdir: "{{ project_dir }}/order-service"
+
+    - name: Build Internal Gateway {{ target_environment | capitalize }} Image
+      ansible.builtin.command:
+        argv:
+          - docker
+          - build
+          - -t
+          - "summerpe-internal-gateway:{{ target_environment }}"
+          - --build-arg
+          - "NGINX_CONF=nginx-{{ target_environment }}.conf"
+          - .
+        chdir: "{{ project_dir }}/internal-gateway"
+
+    ####################################################################
+    # Start Infrastructure
+    ####################################################################
+
+    - name: Start Infrastructure
+      ansible.builtin.command:
+        argv:
+          - docker-compose
+          - -f
+          - docker-compose.yml
+          - up
+          - -d
+        chdir: "{{ project_dir }}"
+
+    ####################################################################
+    # Deploy Target Stack
+    ####################################################################
+
+    - name: Start {{ target_environment | capitalize }} Stack
+      ansible.builtin.command:
+        argv:
+          - docker-compose
+          - -p
+          - "{{ target_environment }}"
+          - -f
+          - "docker-compose-{{ target_environment }}.yml"
+          - up
+          - -d
+        chdir: "{{ project_dir }}"
+
+    ####################################################################
+    # Wait
+    ####################################################################
+
+
+
+    ####################################################################
+    # Verify Current Public APIs
+    ####################################################################
+
+    ####################################################################
+    # Verify Target Environment Health
+    ####################################################################
+
+    - name: Wait for Product Service to become healthy
+      ansible.builtin.command:
+        argv:
+          - docker
+          - inspect
+          - "product-service-{{ target_environment }}"
+          - "--format={{ '{{' }}.State.Health.Status{{ '}}' }}"
+      register: product_health
+      until: product_health.stdout == "healthy"
+      retries: 20
+      delay: 3
+      changed_when: false
+      failed_when: product_health.stdout != "healthy"
+
+    - name: Wait for Inventory Service to become healthy
+      ansible.builtin.command:
+        argv:
+          - docker
+          - inspect
+          - "inventory-service-{{ target_environment }}"
+          - "--format={{ '{{' }}.State.Health.Status{{ '}}' }}"
+      register: inventory_health
+      until: inventory_health.stdout == "healthy"
+      retries: 20
+      delay: 3
+      changed_when: false
+      failed_when: inventory_health.stdout != "healthy"
+
+    - name: Wait for Order Service to become healthy
+      ansible.builtin.command:
+        argv:
+          - docker
+          - inspect
+          - "order-service-{{ target_environment }}"
+          - "--format={{ '{{' }}.State.Health.Status{{ '}}' }}"
+      register: order_health
+      until: order_health.stdout == "healthy"
+      retries: 20
+      delay: 3
+      changed_when: false
+      failed_when: order_health.stdout != "healthy"
+
+    - name: Verify Product route through target internal gateway
+      ansible.builtin.command:
+        argv:
+          - docker
+          - exec
+          - "internal-gateway-{{ target_environment }}"
+          - wget
+          - --spider
+          - -q
+          - http://127.0.0.1/api/v1/products
+      changed_when: false
+
+    - name: Verify Inventory route through target internal gateway
+      ansible.builtin.command:
+        argv:
+          - docker
+          - exec
+          - "internal-gateway-{{ target_environment }}"
+          - wget
+          - --spider
+          - -q
+          - http://127.0.0.1/api/v1/inventories
+      changed_when: false
+
+    - name: Verify Order route through target internal gateway
+      ansible.builtin.command:
+        argv:
+          - docker
+          - exec
+          - "internal-gateway-{{ target_environment }}"
+          - wget
+          - --spider
+          - -q
+          - http://127.0.0.1/api/v1/orders
+      changed_when: false
+
+    - name: Target Environment Verified
+      ansible.builtin.debug:
+        msg:
+          - "{{ target_environment | capitalize }} services and internal gateway are healthy."
+          - "Ready for traffic switching."
+    ####################################################################
+    # Switch Upstream
+    ####################################################################
+    - name: Record traffic switch start
+      ansible.builtin.command: date +%s%3N
+      register: switch_start
+      changed_when: false
+    - name: Update upstream configuration
+      ansible.builtin.replace:
+        path: "{{ project_dir }}/nginx/conf.d/upstream.conf"
+        regexp: "internal-gateway-(blue|green)"
+        replace: "internal-gateway-{{ target_environment }}"
+
+    - name: Wait for Nginx container to be running
+      ansible.builtin.command:
+        argv:
+          - docker
+          - inspect
+          - nginx
+          - "--format={{ '{{' }}.State.Status{{ '}}' }}"
+      register: nginx_status
+      until: nginx_status.stdout == "running"
+      retries: 10
+      delay: 2
+      changed_when: false
+
+    ####################################################################
+    # Reload Nginx
+    ####################################################################
+
+    - name: Reload Nginx
+      ansible.builtin.command:
+        argv:
+          - docker
+          - exec
+          - nginx
+          - nginx
+          - -s
+          - reload
+      changed_when: true
+
+    ####################################################################
+    # Verify Traffic Switch
+    ####################################################################
+
+    - name: Verify Product API after switch
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8090/api/v1/products
+        status_code: 200
+    
+    - name: Record traffic switch end
+      ansible.builtin.command: date +%s%3N
+      register: switch_end
+      changed_when: false
+    - name: Calculate traffic switch duration
+      ansible.builtin.set_fact:
+        switch_duration: "{{ switch_end.stdout | int - switch_start.stdout | int }}"
+    - name: Verify Inventory API after switch
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8090/api/v1/inventories
+        status_code: 200
+
+    - name: Verify Order API after switch
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8090/api/v1/orders
+        status_code: 200
+
+    - name: Traffic Switch Verified
+      ansible.builtin.debug:
+        msg:
+          - "Traffic successfully switched to {{ target_environment | capitalize }}."
+          - "Public APIs are responding successfully."
+
+    ####################################################################
+    # Drain the previous environment
+    #
+    # The public Nginx upstream now points at target_environment, so its
+    # /monitor endpoints cannot report requests still executing in
+    # active_environment. Query each previous service locally instead.
+    ####################################################################
+
+    - name: Wait for Product requests in the previous environment to drain
+      ansible.builtin.command:
+        argv:
+          - docker
+          - exec
+          - "product-service-{{ active_environment }}"
+          - wget
+          - -qO-
+          - http://localhost:8081/monitor/active-requests
+      register: product_requests
+      until: (product_requests.stdout | from_json).activeRequests == 0
+      retries: 30
+      delay: 1
+      changed_when: false
+
+    - name: Wait for Inventory requests in the previous environment to drain
+      ansible.builtin.command:
+        argv:
+          - docker
+          - exec
+          - "inventory-service-{{ active_environment }}"
+          - wget
+          - -qO-
+          - http://localhost:8082/monitor/active-requests
+      register: inventory_requests
+      until: (inventory_requests.stdout | from_json).activeRequests == 0
+      retries: 30
+      delay: 1
+      changed_when: false
+
+    - name: Wait for Order requests in the previous environment to drain
+      ansible.builtin.command:
+        argv:
+          - docker
+          - exec
+          - "order-service-{{ active_environment }}"
+          - wget
+          - -qO-
+          - http://localhost:8083/monitor/active-requests
+      register: order_requests
+      until: (order_requests.stdout | from_json).activeRequests == 0
+      retries: 30
+      delay: 1
+      changed_when: false
+
+    - name: Stop {{ active_environment | capitalize }} Stack
+      ansible.builtin.command:
+        argv:
+          - docker-compose
+          - -p
+          - "{{ active_environment }}"
+          - -f
+          - "docker-compose-{{ active_environment }}.yml"
+          - down
+        chdir: "{{ project_dir }}"
+
+    ####################################################################
+    # Success
+    ####################################################################
+
+    - name: Deployment Completed
+      ansible.builtin.debug:
+        msg:
+          - "Deployment completed successfully."
+          - "Active Environment : {{ target_environment }}"
+          - "Old environment stopped."
+   
+    - name: Save traffic switch evaluation
+      ansible.builtin.copy:
+        dest: "{{ project_dir }}/evaluation/traffic_switch_results.txt"
+        content: |
+          =========================================
+          Blue-Green Traffic Switch Evaluation
+          =========================================
+
+          Active Environment : {{ active_environment }}
+          Target Environment : {{ target_environment }}
+
+          Switch Start Time : {{ switch_start.stdout }}
+          Switch End Time   : {{ switch_end.stdout }}
+
+          Traffic Switch Time : {{ switch_duration }} ms
+
+          =========================================
+
+    - name: Display traffic switch summary
+      ansible.builtin.debug:
+        msg:
+          - "Traffic Switch Time : {{ switch_duration }} ms"
+          - "Saved to evaluation/traffic_switch_results.txt"

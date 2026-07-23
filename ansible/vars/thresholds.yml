@@ -1,0 +1,25 @@
+---
+# Configurable thresholds for the blue-green deploy / switch / rollback
+# playbooks. Override any of these at runtime without editing this file, e.g.:
+#
+#   ansible-playbook -i inventory.ini deploy-blue-green.yml \
+#     --extra-vars "health_check_retries=30 health_check_delay=2"
+
+# How long to wait for the target environment's containers to report
+# "healthy" before giving up and triggering a rollback.
+health_check_retries: 20
+health_check_delay: 3          # seconds between checks (20 * 3 = 60s max wait)
+
+# How many times to retry each public API check after switching traffic.
+api_verify_retries: 5
+api_verify_delay: 2            # seconds between checks
+
+# How long to wait for in-flight requests on the OLD environment to finish
+# (drain) before stopping its containers.
+drain_retries: 30
+drain_delay: 1                 # seconds between checks (30 * 1 = 30s max wait)
+
+# How long to wait for the shared Nginx container to report "running"
+# after (re)starting infrastructure.
+nginx_wait_retries: 10
+nginx_wait_delay: 2

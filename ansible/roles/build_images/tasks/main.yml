@@ -1,0 +1,92 @@
+---
+# Packages the three Spring Boot services and builds fresh Docker images
+# tagged with the target colour. Requires: target_environment, project_dir.
+
+- name: Package Product Service
+  ansible.builtin.command:
+    argv:
+      - mvn
+      - -q
+      - -DskipTests
+      - package
+    chdir: "{{ project_dir }}/product-service"
+  changed_when: true
+
+- name: Package Inventory Service
+  ansible.builtin.command:
+    argv:
+      - mvn
+      - -q
+      - -DskipTests
+      - package
+    chdir: "{{ project_dir }}/inventory-service"
+  changed_when: true
+
+- name: Package Order Service
+  ansible.builtin.command:
+    argv:
+      - mvn
+      - -q
+      - -DskipTests
+      - package
+    chdir: "{{ project_dir }}/order-service"
+  changed_when: true
+
+- name: Stop existing {{ target_environment | capitalize }} stack before rebuild
+  ansible.builtin.command:
+    argv:
+      - docker-compose
+      - -p
+      - "{{ target_environment }}"
+      - -f
+      - "docker-compose-{{ target_environment }}.yml"
+      - down
+    chdir: "{{ project_dir }}"
+  ignore_errors: true
+  changed_when: true
+
+- name: Build Product Service {{ target_environment | capitalize }} image
+  ansible.builtin.command:
+    argv:
+      - docker
+      - build
+      - -t
+      - "product-service:{{ target_environment }}"
+      - .
+    chdir: "{{ project_dir }}/product-service"
+  changed_when: true
+
+- name: Build Inventory Service {{ target_environment | capitalize }} image
+  ansible.builtin.command:
+    argv:
+      - docker
+      - build
+      - -t
+      - "inventory-service:{{ target_environment }}"
+      - .
+    chdir: "{{ project_dir }}/inventory-service"
+  changed_when: true
+
+- name: Build Order Service {{ target_environment | capitalize }} image
+  ansible.builtin.command:
+    argv:
+      - docker
+      - build
+      - -t
+      - "order-service:{{ target_environment }}"
+      - .
+    chdir: "{{ project_dir }}/order-service"
+  changed_when: true
+
+- name: Build Internal Gateway {{ target_environment | capitalize }} image
+  ansible.builtin.command:
+    argv:
+      - docker
+      - build
+      - -t
+      - "summerpe-internal-gateway:{{ target_environment }}"
+      - --build-arg
+      - "NGINX_CONF=nginx-{{ target_environment }}.conf"
+      - .
+    chdir: "{{ project_dir }}/internal-gateway"
+  changed_when: true

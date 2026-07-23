@@ -1,0 +1,64 @@
+---
+# Manual rollback: reverts public traffic to the previously active colour.
+#
+# Use this when a deployment SUCCEEDED (health checks passed, switch
+# completed) but the new colour is misbehaving under real traffic in a way
+# your automated checks didn't catch. deploy-blue-green.yml and switch.yml
+# already roll back automatically on failure — this playbook is for
+# reverting a deploy that looked fine but wasn't.
+#
+# Requires the previous colour's containers to still be running. If
+# deploy-blue-green.yml already stopped them (because the deploy reported
+# success), redeploy the previous version instead of running this.
+#
+# Usage:
+#   ansible-playbook -i inventory.ini rollback.yml
+#
+# To override thresholds for this run only:
+#   ansible-playbook -i inventory.ini rollback.yml \
+#     --extra-vars "api_verify_retries=10"
+
+- name: Manual Rollback - Blue-Green
+  hosts: local
+  gather_facts: false
+
+  vars_files:
+    - vars/thresholds.yml
+
+  vars:
+    project_dir: "{{ playbook_dir }}/.."
+
+  tasks:
+
+    - name: Detect current active environment
+      ansible.builtin.include_role:
+        name: detect_environment
+
+    - name: Confirm the previous environment's containers are still running
+      ansible.builtin.command:
+        argv:
+          - docker
+          - inspect
+          - "product-service-{{ target_environment }}"
+          - "--format={{ '{{' }}.State.Status{{ '}}' }}"
+      register: previous_stack_status
+      changed_when: false
+      failed_when: false
+
+    - name: Abort if the previous environment is not available to roll back to
+      ansible.builtin.fail:
+        msg: >-
+          {{ target_environment }} containers are not running
+          (status: {{ previous_stack_status.stdout | default('unknown') }}).
+          There is nothing to roll back to — redeploy the previous version
+          instead using deploy-blue-green.yml.
+      when: >
+        previous_stack_status.rc != 0 or
+        previous_stack_status.stdout != "running"
+
+    - name: Roll back traffic to {{ target_environment }}
+      ansible.builtin.include_role:
+        name: rollback
+      vars:
+        rollback_to_environment: "{{ target_environment }}"
+        failed_environment: "{{ active_environment }}"

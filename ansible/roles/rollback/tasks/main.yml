@@ -1,0 +1,130 @@
+---
+# Reverts the public Nginx upstream to a known-good colour and, if a
+# failed colour is specified, tears down its stack. Used both:
+#   1. Automatically, from a `rescue:` block when a deploy/switch fails.
+#   2. Manually, via rollback.yml, when something goes wrong AFTER a
+#      deploy completed (e.g. bad behaviour only shows up under real
+#      traffic).
+#
+# Requires: rollback_to_environment (colour to revert traffic to)
+# Optional: failed_environment (colour to stop/clean up, if any)
+# Uses (from vars/thresholds.yml): api_verify_retries, api_verify_delay,
+#                                   nginx_wait_retries, nginx_wait_delay
+
+- name: Verify rollback target containers are running
+  ansible.builtin.command:
+    argv:
+      - docker
+      - inspect
+      - "product-service-{{ rollback_to_environment }}"
+      - "--format={{ '{{' }}.State.Status{{ '}}' }}"
+  register: rollback_target_status
+  changed_when: false
+  failed_when: false
+
+- name: Abort rollback if target environment is not available
+  ansible.builtin.fail:
+    msg: >-
+      Cannot roll back to {{ rollback_to_environment }} because its
+      containers are not running (status:
+      {{ rollback_target_status.stdout | default('unknown') }}).
+      Manual intervention is required — check `docker ps -a`.
+  when: >
+    rollback_target_status.rc != 0 or
+    rollback_target_status.stdout != "running"
+
+- name: Revert upstream configuration to {{ rollback_to_environment }}
+  ansible.builtin.replace:
+    path: "{{ project_dir }}/nginx/conf.d/upstream.conf"
+    regexp: "internal-gateway-(blue|green)"
+    replace: "internal-gateway-{{ rollback_to_environment }}"
+
+- name: Wait for Nginx container to be running
+  ansible.builtin.command:
+    argv:
+      - docker
+      - inspect
+      - nginx
+      - "--format={{ '{{' }}.State.Status{{ '}}' }}"
+  register: rb_nginx_status
+  until: rb_nginx_status.stdout == "running"
+  retries: "{{ nginx_wait_retries }}"
+  delay: "{{ nginx_wait_delay }}"
+  changed_when: false
+
+- name: Reload Nginx after rollback
+  ansible.builtin.command:
+    argv:
+      - docker
+      - exec
+      - nginx
+      - nginx
+      - -s
+      - reload
+  changed_when: true
+
+- name: Verify Product API after rollback
+  ansible.builtin.uri:
+    url: http://127.0.0.1:8090/api/v1/products
+    status_code: 200
+  register: rb_product_check
+  until: rb_product_check.status == 200
+  retries: "{{ api_verify_retries }}"
+  delay: "{{ api_verify_delay }}"
+
+- name: Verify Inventory API after rollback
+  ansible.builtin.uri:
+    url: http://127.0.0.1:8090/api/v1/inventories
+    status_code: 200
+  register: rb_inventory_check
+  until: rb_inventory_check.status == 200
+  retries: "{{ api_verify_retries }}"
+  delay: "{{ api_verify_delay }}"
+
+- name: Verify Order API after rollback
+  ansible.builtin.uri:
+    url: http://127.0.0.1:8090/api/v1/orders
+    status_code: 200
+  register: rb_order_check
+  until: rb_order_check.status == 200
+  retries: "{{ api_verify_retries }}"
+  delay: "{{ api_verify_delay }}"
+
+- name: Stop failed environment stack ({{ failed_environment | default('none') }})
+  ansible.builtin.command:
+    argv:
+      - docker-compose
+      - -p
+      - "{{ failed_environment }}"
+      - -f
+      - "docker-compose-{{ failed_environment }}.yml"
+      - down
+    chdir: "{{ project_dir }}"
+  when: failed_environment is defined and failed_environment | length > 0
+  ignore_errors: true
+  changed_when: true
+
+- name: Record rollback timestamp
+  ansible.builtin.command: date +%s%3N
+  register: rollback_time
+  changed_when: false
+
+- name: Save rollback evaluation report
+  ansible.builtin.copy:
+    dest: "{{ project_dir }}/evaluation/rollback_results.txt"
+    content: |
+      =========================================
+      Blue-Green Rollback Evaluation
+      =========================================
+
+      Rolled back to     : {{ rollback_to_environment }}
+      Failed environment : {{ failed_environment | default('n/a') }}
+      Rollback timestamp : {{ rollback_time.stdout }} (ms epoch)
+
+      =========================================
+
+- name: Rollback completed
+  ansible.builtin.debug:
+    msg:
+      - "Rollback completed successfully."
+      - "Active environment is now : {{ rollback_to_environment }}"

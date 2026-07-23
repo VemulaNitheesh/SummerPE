@@ -1,0 +1,85 @@
+---
+# Flips the public Nginx upstream to target_environment, reloads Nginx,
+# and verifies the public API endpoints respond through the new colour.
+# Also times the switch itself for the evaluation report.
+#
+# Requires: target_environment, project_dir
+# Uses (from vars/thresholds.yml): api_verify_retries, api_verify_delay,
+#                                   nginx_wait_retries, nginx_wait_delay
+
+- name: Record traffic switch start time
+  ansible.builtin.command: date +%s%3N
+  register: switch_start
+  changed_when: false
+
+- name: Update upstream configuration to {{ target_environment }}
+  ansible.builtin.replace:
+    path: "{{ project_dir }}/nginx/conf.d/upstream.conf"
+    regexp: "internal-gateway-(blue|green)"
+    replace: "internal-gateway-{{ target_environment }}"
+
+- name: Wait for Nginx container to be running
+  ansible.builtin.command:
+    argv:
+      - docker
+      - inspect
+      - nginx
+      - "--format={{ '{{' }}.State.Status{{ '}}' }}"
+  register: nginx_status
+  until: nginx_status.stdout == "running"
+  retries: "{{ nginx_wait_retries }}"
+  delay: "{{ nginx_wait_delay }}"
+  changed_when: false
+
+- name: Reload Nginx
+  ansible.builtin.command:
+    argv:
+      - docker
+      - exec
+      - nginx
+      - nginx
+      - -s
+      - reload
+  changed_when: true
+
+- name: Verify Product API after switch
+  ansible.builtin.uri:
+    url: http://127.0.0.1:8090/api/v1/products
+    status_code: 200
+  register: product_api_check
+  until: product_api_check.status == 200
+  retries: "{{ api_verify_retries }}"
+  delay: "{{ api_verify_delay }}"
+
+- name: Record traffic switch end time
+  ansible.builtin.command: date +%s%3N
+  register: switch_end
+  changed_when: false
+
+- name: Calculate traffic switch duration
+  ansible.builtin.set_fact:
+    switch_duration: "{{ switch_end.stdout | int - switch_start.stdout | int }}"
+
+- name: Verify Inventory API after switch
+  ansible.builtin.uri:
+    url: http://127.0.0.1:8090/api/v1/inventories
+    status_code: 200
+  register: inventory_api_check
+  until: inventory_api_check.status == 200
+  retries: "{{ api_verify_retries }}"
+  delay: "{{ api_verify_delay }}"
+
+- name: Verify Order API after switch
+  ansible.builtin.uri:
+    url: http://127.0.0.1:8090/api/v1/orders
+    status_code: 200
+  register: order_api_check
+  until: order_api_check.status == 200
+  retries: "{{ api_verify_retries }}"
+  delay: "{{ api_verify_delay }}"
+
+- name: Traffic switch verified
+  ansible.builtin.debug:
+    msg:
+      - "Traffic successfully switched to {{ target_environment | capitalize }}."
+      - "Switch duration : {{ switch_duration }} ms"

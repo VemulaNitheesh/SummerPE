@@ -1,0 +1,29 @@
+---
+# Reads nginx/conf.d/upstream.conf to work out which colour is currently
+# live (active_environment) and which one is idle (target_environment).
+# Read-only — safe to run any number of times.
+
+- name: Read upstream configuration
+  ansible.builtin.slurp:
+    src: "{{ project_dir }}/nginx/conf.d/upstream.conf"
+  register: upstream_file
+
+- name: Decode upstream configuration
+  ansible.builtin.set_fact:
+    upstream_content: "{{ upstream_file.content | b64decode }}"
+
+- name: Determine active environment
+  ansible.builtin.set_fact:
+    active_environment: >-
+      {{ 'blue' if 'internal-gateway-blue' in upstream_content else 'green' }}
+
+- name: Determine target environment
+  ansible.builtin.set_fact:
+    target_environment: >-
+      {{ 'green' if active_environment == 'blue' else 'blue' }}
+
+- name: Display detected environments
+  ansible.builtin.debug:
+    msg:
+      - "Active Environment : {{ active_environment }}"
+      - "Target Environment : {{ target_environment }}"

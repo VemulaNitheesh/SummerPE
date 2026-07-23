@@ -1,124 +1,74 @@
 ---
-- name: Blue-Green Traffic Switch Only
+- name: Blue-Green Traffic Switch Only (role-based, with automatic rollback)
   hosts: local
   gather_facts: false
+
+  vars_files:
+    - vars/thresholds.yml
 
   vars:
     project_dir: "{{ playbook_dir }}/.."
 
   tasks:
 
-    ####################################################################
-    # Detect Active Environment
-    ####################################################################
+    - name: Detect active and target environment
+      ansible.builtin.include_role:
+        name: detect_environment
 
-    - name: Read upstream configuration
-      ansible.builtin.slurp:
-        src: "{{ project_dir }}/nginx/conf.d/upstream.conf"
-      register: upstream_file
+    - block:
 
-    - name: Decode upstream configuration
-      ansible.builtin.set_fact:
-        upstream_content: "{{ upstream_file.content | b64decode }}"
+        - name: Verify {{ target_environment }} is healthy before switching
+          ansible.builtin.include_role:
+            name: health_check
+          vars:
+            check_environment: "{{ target_environment }}"
 
-    - name: Determine active environment
-      ansible.builtin.set_fact:
-        active_environment: >-
-          {{ 'blue' if 'internal-gateway-blue' in upstream_content else 'green' }}
+        - name: Switch public traffic to {{ target_environment }}
+          ansible.builtin.include_role:
+            name: switch_traffic
 
-    - name: Determine target environment
-      ansible.builtin.set_fact:
-        target_environment: >-
-          {{ 'green' if active_environment == 'blue' else 'blue' }}
+        - name: Drain requests from {{ active_environment }} (previous colour)
+          ansible.builtin.include_role:
+            name: drain_requests
+          vars:
+            drain_environment: "{{ active_environment }}"
 
-    ####################################################################
-    # Switch Traffic
-    ####################################################################
+        - name: Stop {{ active_environment | capitalize }} stack
+          ansible.builtin.command:
+            argv:
+              - docker-compose
+              - -p
+              - "{{ active_environment }}"
+              - -f
+              - "docker-compose-{{ active_environment }}.yml"
+              - down
+            chdir: "{{ project_dir }}"
+          changed_when: true
 
-    - name: Update upstream
-      ansible.builtin.replace:
-        path: "{{ project_dir }}/nginx/conf.d/upstream.conf"
-        regexp: "internal-gateway-(blue|green)"
-        replace: "internal-gateway-{{ target_environment }}"
+        - name: Switch completed
+          ansible.builtin.debug:
+            msg:
+              - "Traffic switched successfully to {{ target_environment | capitalize }}."
+              - "Old environment stopped."
 
-    - name: Reload Nginx
-      ansible.builtin.command:
-        argv:
-          - docker
-          - exec
-          - nginx
-          - nginx
-          - -s
-          - reload
+      rescue:
 
-    ####################################################################
-    # Verify APIs
-    ####################################################################
+        - name: Switch failed - triggering automatic rollback
+          ansible.builtin.debug:
+            msg: >-
+              Switch to {{ target_environment }} failed
+              ({{ ansible_failed_task.name | default('unknown step') }}).
+              Rolling traffic back to {{ active_environment }}.
 
-    - name: Verify Product API
-      ansible.builtin.uri:
-        url: http://127.0.0.1:8090/api/v1/products
-        status_code: 200
+        - name: Roll back to {{ active_environment }}
+          ansible.builtin.include_role:
+            name: rollback
+          vars:
+            rollback_to_environment: "{{ active_environment }}"
+            failed_environment: "{{ target_environment }}"
 
-    - name: Verify Inventory API
-      ansible.builtin.uri:
-        url: http://127.0.0.1:8090/api/v1/inventories
-        status_code: 200
-
-    - name: Verify Order API
-      ansible.builtin.uri:
-        url: http://127.0.0.1:8090/api/v1/orders
-        status_code: 200
-
-    ####################################################################
-    # Wait for Existing Requests
-    ####################################################################
-
-    - name: Wait for Product requests
-      ansible.builtin.uri:
-        url: http://127.0.0.1:8090/monitor/product
-        return_content: true
-      register: product_requests
-      until: product_requests.json.activeRequests == 0
-      retries: 30
-      delay: 1
-
-    - name: Wait for Inventory requests
-      ansible.builtin.uri:
-        url: http://127.0.0.1:8090/monitor/inventory
-        return_content: true
-      register: inventory_requests
-      until: inventory_requests.json.activeRequests == 0
-      retries: 30
-      delay: 1
-
-    - name: Wait for Order requests
-      ansible.builtin.uri:
-        url: http://127.0.0.1:8090/monitor/order
-        return_content: true
-      register: order_requests
-      until: order_requests.json.activeRequests == 0
-      retries: 30
-      delay: 1
-
-    ####################################################################
-    # Stop Old Stack
-    ####################################################################
-
-    - name: Stop old stack
-      ansible.builtin.command:
-        argv:
-          - docker-compose
-          - -p
-          - "{{ active_environment }}"
-          - -f
-          - "docker-compose-{{ active_environment }}.yml"
-          - down
-      args:
-        chdir: "{{ project_dir }}"
-
-    - name: Finished
-      ansible.builtin.debug:
-        msg:
-          - "Traffic switched successfully."
-          - "Old environment stopped."
+        - name: Fail the play after rollback
+          ansible.builtin.fail:
+            msg: >-
+              Traffic switch aborted and rolled back to {{ active_environment }}.
+              Check evaluation/rollback_results.txt for the rollback record.
