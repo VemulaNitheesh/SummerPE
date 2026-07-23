@@ -1,82 +1,234 @@
 ---
-- name: Build and run the medicine ecommerce prototype
+- name: Blue-Green Runtime Deployment
   hosts: local
   gather_facts: false
+
   vars:
     project_dir: "{{ playbook_dir }}/.."
+
   tasks:
+
+    ####################################################################
+    # Verify Prerequisites
+    ####################################################################
+
     - name: Verify Docker is available
       ansible.builtin.command:
-        argv: [docker, --version]
+        argv:
+          - docker
+          - --version
       changed_when: false
+
     - name: Verify Docker Compose is available
       ansible.builtin.command:
-        argv: [docker-compose, --version]
+        argv:
+          - docker-compose
+          - --version
       changed_when: false
-    - name: Package product service
+
+    ####################################################################
+    # Detect Active Environment
+    ####################################################################
+
+    - name: Read upstream configuration
+      ansible.builtin.slurp:
+        src: "{{ project_dir }}/nginx/conf.d/upstream.conf"
+      register: upstream_file
+
+    - name: Decode upstream configuration
+      ansible.builtin.set_fact:
+        upstream_content: "{{ upstream_file.content | b64decode }}"
+
+    - name: Determine active environment
+      ansible.builtin.set_fact:
+        active_environment: >-
+          {{ 'blue' if 'internal-gateway-blue' in upstream_content else 'green' }}
+
+    - name: Determine deployment target
+      ansible.builtin.set_fact:
+        target_environment: >-
+          {{ 'green' if active_environment == 'blue' else 'blue' }}
+
+    - name: Display deployment plan
+      ansible.builtin.debug:
+        msg:
+          - "Active Environment : {{ active_environment }}"
+          - "Deployment Target : {{ target_environment }}"
+
+    ####################################################################
+    # Start Infrastructure
+    ####################################################################
+
+    - name: Start Infrastructure
       ansible.builtin.command:
-        argv: [mvn, -q, -DskipTests, package]
-        chdir: "{{ project_dir }}/product-service"
-      changed_when: true
-    - name: Package inventory service
-      ansible.builtin.command:
-        argv: [mvn, -q, -DskipTests, package]
-        chdir: "{{ project_dir }}/inventory-service"
-      changed_when: true
-    - name: Package order service
-      ansible.builtin.command:
-        argv: [mvn, -q, -DskipTests, package]
-        chdir: "{{ project_dir }}/order-service"
-      changed_when: true
-    - name: Build current service images
-      ansible.builtin.command:
-        argv: [docker-compose, -f, docker-compose.yml, build, product-service, inventory-service, order-service]
+        argv:
+          - docker-compose
+          - -f
+          - docker-compose.yml
+          - up
+          - -d
+      args:
         chdir: "{{ project_dir }}"
-      changed_when: true
-    - name: Start the prototype stack
+
+    ####################################################################
+    # Start Target Stack
+    ####################################################################
+
+    - name: Start {{ target_environment | capitalize }} Stack
       ansible.builtin.command:
-        argv: [docker-compose, -f, docker-compose.yml, up, -d]
+        argv:
+          - docker-compose
+          - -p
+          - "{{ target_environment }}"
+          - -f
+          - "docker-compose-{{ target_environment }}.yml"
+          - up
+          - -d
+      args:
         chdir: "{{ project_dir }}"
-      changed_when: true
-    - name: Wait for product-service health endpoint
-      ansible.builtin.uri:
-        url: http://127.0.0.1:8081/actuator/health
-        status_code: 200
-        return_content: true
+
+    ####################################################################
+    # Wait for Health Checks
+    ####################################################################
+
+    - name: Wait for Product Service to become healthy
+      ansible.builtin.command:
+        argv:
+          - docker
+          - inspect
+          - "product-service-{{ target_environment }}"
+          - "--format={{ '{{' }}.State.Health.Status{{ '}}' }}"
       register: product_health
-      until: product_health.json.status == 'UP'
-      retries: 24
-      delay: 5
-    - name: Wait for inventory-service health endpoint
-      ansible.builtin.uri:
-        url: http://127.0.0.1:8082/actuator/health
-        status_code: 200
-        return_content: true
+      until: product_health.stdout == "healthy"
+      retries: 20
+      delay: 3
+      changed_when: false
+
+    - name: Wait for Inventory Service to become healthy
+      ansible.builtin.command:
+        argv:
+          - docker
+          - inspect
+          - "inventory-service-{{ target_environment }}"
+          - "--format={{ '{{' }}.State.Health.Status{{ '}}' }}"
       register: inventory_health
-      until: inventory_health.json.status == 'UP'
-      retries: 24
-      delay: 5
-    - name: Confirm nginx routes inventory traffic
+      until: inventory_health.stdout == "healthy"
+      retries: 20
+      delay: 3
+      changed_when: false
+
+    - name: Wait for Order Service to become healthy
+      ansible.builtin.command:
+        argv:
+          - docker
+          - inspect
+          - "order-service-{{ target_environment }}"
+          - "--format={{ '{{' }}.State.Health.Status{{ '}}' }}"
+      register: order_health
+      until: order_health.stdout == "healthy"
+      retries: 20
+      delay: 3
+      changed_when: false
+
+    - name: Target Environment Verified
+      ansible.builtin.debug:
+        msg:
+          - "{{ target_environment | capitalize }} environment is healthy."
+          - "Ready for traffic switching."
+
+    ####################################################################
+    # Switch Traffic
+    ####################################################################
+
+    - name: Update upstream configuration
+      ansible.builtin.replace:
+        path: "{{ project_dir }}/nginx/conf.d/upstream.conf"
+        regexp: "internal-gateway-(blue|green)"
+        replace: "internal-gateway-{{ target_environment }}"
+
+    - name: Reload Nginx
+      ansible.builtin.command:
+        argv:
+          - docker
+          - exec
+          - nginx
+          - nginx
+          - -s
+          - reload
+
+    ####################################################################
+    # Verify APIs
+    ####################################################################
+
+    - name: Verify Product API
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8090/api/v1/products
+        status_code: 200
+
+    - name: Verify Inventory API
       ansible.builtin.uri:
         url: http://127.0.0.1:8090/api/v1/inventories
         status_code: 200
-      register: nginx_inventory
-      until: nginx_inventory.status == 200
-      retries: 12
-      delay: 3
-    - name: Wait for order-service health endpoint
+
+    - name: Verify Order API
       ansible.builtin.uri:
-        url: http://127.0.0.1:8083/actuator/health
+        url: http://127.0.0.1:8090/api/v1/orders
         status_code: 200
+
+    ####################################################################
+    # Wait for Requests to Drain
+    ####################################################################
+
+    - name: Wait for Product Service requests to drain
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8090/monitor/product
         return_content: true
-      register: order_health
-      until: order_health.json.status == 'UP'
-      retries: 24
-      delay: 5
-    - name: Report deployed endpoints
+      register: product_requests
+      until: product_requests.json.activeRequests == 0
+      retries: 30
+      delay: 1
+
+    - name: Wait for Inventory Service requests to drain
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8090/monitor/inventory
+        return_content: true
+      register: inventory_requests
+      until: inventory_requests.json.activeRequests == 0
+      retries: 30
+      delay: 1
+
+    - name: Wait for Order Service requests to drain
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8090/monitor/order
+        return_content: true
+      register: order_requests
+      until: order_requests.json.activeRequests == 0
+      retries: 30
+      delay: 1
+
+    ####################################################################
+    # Stop Previous Environment
+    ####################################################################
+
+    - name: Stop {{ active_environment | capitalize }} Stack
+      ansible.builtin.command:
+        argv:
+          - docker-compose
+          - -p
+          - "{{ active_environment }}"
+          - -f
+          - "docker-compose-{{ active_environment }}.yml"
+          - down
+      args:
+        chdir: "{{ project_dir }}"
+
+    ####################################################################
+    # Success
+    ####################################################################
+
+    - name: Deployment Completed
       ansible.builtin.debug:
         msg:
-          - "Product service: http://localhost:8081"
-          - "Inventory service: http://localhost:8082"
-          - "Order service: http://localhost:8083"
-          - "Nginx gateway: http://localhost:8090"
+          - "Deployment completed successfully."
+          - "Active Environment : {{ target_environment }}"
+          - "Old environment stopped."

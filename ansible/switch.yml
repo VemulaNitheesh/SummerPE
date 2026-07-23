@@ -1,0 +1,124 @@
+---
+- name: Blue-Green Traffic Switch Only
+  hosts: local
+  gather_facts: false
+
+  vars:
+    project_dir: "{{ playbook_dir }}/.."
+
+  tasks:
+
+    ####################################################################
+    # Detect Active Environment
+    ####################################################################
+
+    - name: Read upstream configuration
+      ansible.builtin.slurp:
+        src: "{{ project_dir }}/nginx/conf.d/upstream.conf"
+      register: upstream_file
+
+    - name: Decode upstream configuration
+      ansible.builtin.set_fact:
+        upstream_content: "{{ upstream_file.content | b64decode }}"
+
+    - name: Determine active environment
+      ansible.builtin.set_fact:
+        active_environment: >-
+          {{ 'blue' if 'internal-gateway-blue' in upstream_content else 'green' }}
+
+    - name: Determine target environment
+      ansible.builtin.set_fact:
+        target_environment: >-
+          {{ 'green' if active_environment == 'blue' else 'blue' }}
+
+    ####################################################################
+    # Switch Traffic
+    ####################################################################
+
+    - name: Update upstream
+      ansible.builtin.replace:
+        path: "{{ project_dir }}/nginx/conf.d/upstream.conf"
+        regexp: "internal-gateway-(blue|green)"
+        replace: "internal-gateway-{{ target_environment }}"
+
+    - name: Reload Nginx
+      ansible.builtin.command:
+        argv:
+          - docker
+          - exec
+          - nginx
+          - nginx
+          - -s
+          - reload
+
+    ####################################################################
+    # Verify APIs
+    ####################################################################
+
+    - name: Verify Product API
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8090/api/v1/products
+        status_code: 200
+
+    - name: Verify Inventory API
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8090/api/v1/inventories
+        status_code: 200
+
+    - name: Verify Order API
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8090/api/v1/orders
+        status_code: 200
+
+    ####################################################################
+    # Wait for Existing Requests
+    ####################################################################
+
+    - name: Wait for Product requests
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8090/monitor/product
+        return_content: true
+      register: product_requests
+      until: product_requests.json.activeRequests == 0
+      retries: 30
+      delay: 1
+
+    - name: Wait for Inventory requests
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8090/monitor/inventory
+        return_content: true
+      register: inventory_requests
+      until: inventory_requests.json.activeRequests == 0
+      retries: 30
+      delay: 1
+
+    - name: Wait for Order requests
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8090/monitor/order
+        return_content: true
+      register: order_requests
+      until: order_requests.json.activeRequests == 0
+      retries: 30
+      delay: 1
+
+    ####################################################################
+    # Stop Old Stack
+    ####################################################################
+
+    - name: Stop old stack
+      ansible.builtin.command:
+        argv:
+          - docker-compose
+          - -p
+          - "{{ active_environment }}"
+          - -f
+          - "docker-compose-{{ active_environment }}.yml"
+          - down
+      args:
+        chdir: "{{ project_dir }}"
+
+    - name: Finished
+      ansible.builtin.debug:
+        msg:
+          - "Traffic switched successfully."
+          - "Old environment stopped."

@@ -11,9 +11,6 @@ services:
       - mysql-data:/var/lib/mysql
       - ./mysql/init:/docker-entrypoint-initdb.d
 
-    networks:
-      - medicine-network
-
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
@@ -21,123 +18,6 @@ services:
       retries: 10
       start_period: 30s
 
-  product-service:
-    image: product-service:blue
-
-    
-    container_name: product-service-container
-    restart: unless-stopped
-
-    depends_on:
-      mysql:
-        condition: service_healthy
-    stop_grace_period: 35s
-
-    environment:
-      DB_URL: jdbc:mysql://mysql:3306/${PRODUCT_DB}?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "${PRODUCT_PORT}:8081"
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8081/actuator/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
-
-    networks:
-      - medicine-network
-  product-service-green:
-    image: product-service:green
-    container_name: product-service-green
-    restart: unless-stopped
-
-    depends_on:
-      mysql:
-        condition: service_healthy
-    stop_grace_period: 35s
-    environment:
-      DB_URL: jdbc:mysql://mysql:3306/${PRODUCT_DB}?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-
-    ports:
-      - "8084:8081"
-
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8081/actuator/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
-
-    networks:
-      - medicine-network
-
-  inventory-service:
-    image: inventory-service:latest
-
-    build:
-      context: ./inventory-service
-
-    container_name: inventory-service-container
-    restart: unless-stopped
-    stop_grace_period: 35s
-
-    depends_on:
-      mysql:
-        condition: service_healthy
-
-    environment:
-      DB_URL: jdbc:mysql://mysql:3306/${INVENTORY_DB}?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      PRODUCT_SERVICE_URL: http://internal-gateway
-
-    ports:
-      - "${INVENTORY_PORT}:8082"
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8082/actuator/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
-
-    networks:
-      - medicine-network
-  order-service:
-    image: order-service:latest
-
-    build:
-      context: ./order-service
-
-    container_name: order-service-container
-    restart: unless-stopped
-    stop_grace_period: 35s
-    depends_on:
-      mysql:
-        condition: service_healthy
-      product-service:
-        condition: service_healthy
-      inventory-service:
-        condition: service_healthy
-
-    environment:
-      DB_URL: jdbc:mysql://mysql:3306/${ORDER_DB}?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      PRODUCT_SERVICE_URL: http://internal-gateway
-      INVENTORY_SERVICE_URL: http://internal-gateway
-
-    ports:
-      - "${ORDER_PORT}:8083"
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8083/actuator/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
     networks:
       - medicine-network
 
@@ -146,38 +26,18 @@ services:
     container_name: nginx
     restart: unless-stopped
 
-    depends_on:
-      product-service:
-        condition: service_healthy
-      inventory-service:
-        condition: service_healthy
-      order-service:
-        condition: service_healthy
-
     ports:
       - "8090:80"
 
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx:/etc/nginx:ro
 
     networks:
       - medicine-network
-  internal-gateway:
-    build:
-      context: ./internal-gateway
-    container_name: internal-gateway-container
-    restart: unless-stopped
-    depends_on:
-      product-service:
-        condition: service_healthy
-      inventory-service:
-        condition: service_healthy
-      order-service:
-        condition: service_healthy
-    networks:
-      - medicine-network
+
 volumes:
   mysql-data:
 
 networks:
   medicine-network:
+    external: true

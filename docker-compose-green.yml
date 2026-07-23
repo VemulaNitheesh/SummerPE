@@ -1,0 +1,85 @@
+services:
+
+  internal-gateway:
+    image: summerpe-internal-gateway:green
+    container_name: internal-gateway-green
+    restart: unless-stopped
+
+    networks:
+      - medicine-network
+
+  product-service:
+    image: product-service:green
+    container_name: product-service-green
+    restart: unless-stopped
+    stop_grace_period: 35s
+
+
+
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/${PRODUCT_DB}?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+    networks:
+      - medicine-network
+
+  inventory-service:
+    image: inventory-service:green
+    container_name: inventory-service-green
+    restart: unless-stopped
+    stop_grace_period: 35s
+
+
+
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/${INVENTORY_DB}?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      PRODUCT_SERVICE_URL: http://internal-gateway
+
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8082/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+    networks:
+      - medicine-network
+
+  order-service:
+    image: order-service:green
+    container_name: order-service-green
+    restart: unless-stopped
+    stop_grace_period: 35s
+
+
+
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/${ORDER_DB}?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      PRODUCT_SERVICE_URL: http://internal-gateway
+      INVENTORY_SERVICE_URL: http://internal-gateway
+
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8083/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+    networks:
+      - medicine-network
+
+networks:
+  medicine-network:
+    external: true
