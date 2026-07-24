@@ -5,6 +5,6 @@ Blue-Green Traffic Switch Evaluation
 Active Environment : green
 Target Environment : blue
 
-Traffic Switch Time : 2489 ms
+Traffic Switch Time : 2802 ms
 
 =========================================

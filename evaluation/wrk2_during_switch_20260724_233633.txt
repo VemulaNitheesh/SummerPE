@@ -1,0 +1,13 @@
+Running 2m test @ http://127.0.0.1:8090
+  4 threads and 20 connections
+  Thread calibration: mean lat.: 32.650ms, rate sampling interval: 117ms
+  Thread calibration: mean lat.: 33.112ms, rate sampling interval: 137ms
+  Thread calibration: mean lat.: 34.120ms, rate sampling interval: 132ms
+  Thread calibration: mean lat.: 33.877ms, rate sampling interval: 132ms
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    33.06ms   41.38ms 277.50ms   88.56%
+    Req/Sec     6.82     12.66    43.00     82.33%
+  2720 requests in 1.50m, 4.46MB read
+  Socket errors: connect 0, read 0, write 0, timeout 340
+Requests/sec:     30.20
+Transfer/sec:     50.77KB

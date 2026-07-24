@@ -1,0 +1,74 @@
+==================================================
+FULL BLUE-GREEN EVALUATION REPORT
+==================================================
+Run ID               : 20260724_233633
+Playbook executed     : deploy-blue-green.yml
+Deploy exit status    : 0
+Deploy wall time       : 59247 ms
+  (build + health-check + traffic switch + drain + cleanup —
+   this is NOT the same thing as downtime, see below)
+
+--- Nginx switch time only (upstream flip + reload, from Ansible) ---
+=========================================
+Blue-Green Traffic Switch Evaluation
+=========================================
+
+Active Environment : blue
+Target Environment : green
+
+Traffic Switch Time : 2639 ms
+
+=========================================
+
+--- Client-observed downtime (request-level probe, 20ms resolution) ---
+==============================================================
+Client-Observed Downtime Report
+==============================================================
+(approx. probe resolution: 1 ms — real outage boundaries fall within +/- this of the reported bounds)
+
+Endpoint: product
+  Total requests        : 3348
+  Failed requests       : 0
+  Success rate          : 100.0%
+  Outage windows        : 0
+  Downtime (lower bound): 0 ms
+  Downtime (upper bound): 0 ms  <- report this one
+  Longest single outage : 0 ms
+
+Endpoint: inventory
+  Total requests        : 3349
+  Failed requests       : 0
+  Success rate          : 100.0%
+  Outage windows        : 0
+  Downtime (lower bound): 0 ms
+  Downtime (upper bound): 0 ms  <- report this one
+  Longest single outage : 0 ms
+
+Endpoint: order
+  Total requests        : 3335
+  Failed requests       : 0
+  Success rate          : 100.0%
+  Outage windows        : 0
+  Downtime (lower bound): 0 ms
+  Downtime (upper bound): 0 ms  <- report this one
+  Longest single outage : 0 ms
+
+--------------------------------------------------------------
+Combined downtime across all endpoints, lower bound: 0 ms
+Combined downtime across all endpoints, upper bound: 0 ms
+==============================================================
+
+--- wrk2 sustained mixed-load summary (throughput + latency percentiles) ---
+Running 2m test @ http://127.0.0.1:8090
+  4 threads and 20 connections
+  Thread calibration: mean lat.: 32.650ms, rate sampling interval: 117ms
+  Thread calibration: mean lat.: 33.112ms, rate sampling interval: 137ms
+  Thread calibration: mean lat.: 34.120ms, rate sampling interval: 132ms
+  Thread calibration: mean lat.: 33.877ms, rate sampling interval: 132ms
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    33.06ms   41.38ms 277.50ms   88.56%
+    Req/Sec     6.82     12.66    43.00     82.33%
+  2720 requests in 1.50m, 4.46MB read
+  Socket errors: connect 0, read 0, write 0, timeout 340
+Requests/sec:     30.20
+Transfer/sec:     50.77KB
