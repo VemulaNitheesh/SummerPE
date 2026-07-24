@@ -1,0 +1,36 @@
+==============================================================
+Client-Observed Downtime Report
+==============================================================
+(approx. probe resolution: 1 ms — real outage boundaries fall within +/- this of the reported bounds)
+
+Endpoint: product
+  Total requests        : 3399
+  Failed requests       : 0
+  Success rate          : 100.0%
+  Outage windows        : 0
+  Downtime (lower bound): 0 ms
+  Downtime (upper bound): 0 ms  <- report this one
+  Longest single outage : 0 ms
+
+Endpoint: order
+  Total requests        : 3413
+  Failed requests       : 0
+  Success rate          : 100.0%
+  Outage windows        : 0
+  Downtime (lower bound): 0 ms
+  Downtime (upper bound): 0 ms  <- report this one
+  Longest single outage : 0 ms
+
+Endpoint: inventory
+  Total requests        : 3384
+  Failed requests       : 0
+  Success rate          : 100.0%
+  Outage windows        : 0
+  Downtime (lower bound): 0 ms
+  Downtime (upper bound): 0 ms  <- report this one
+  Longest single outage : 0 ms
+
+--------------------------------------------------------------
+Combined downtime across all endpoints, lower bound: 0 ms
+Combined downtime across all endpoints, upper bound: 0 ms
+==============================================================

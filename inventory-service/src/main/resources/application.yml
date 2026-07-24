@@ -5,6 +5,10 @@ spring:
     url: ${DB_URL:jdbc:mysql://localhost:3306/inventory_service?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC}
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:admin}
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:20}
+      minimum-idle: ${DB_POOL_MIN_IDLE:5}
+      connection-timeout: ${DB_POOL_CONNECTION_TIMEOUT_MS:5000}
   jpa:
     hibernate:
       ddl-auto: update

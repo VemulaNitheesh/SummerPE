@@ -17,6 +17,7 @@ import com.medicinecommerce.orderservice.repository.OrderRepository;
 import com.medicinecommerce.orderservice.service.OrderService;
 import feign.FeignException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -37,7 +38,18 @@ public class OrderServiceImpl implements OrderService {
         this.inventoryClient = inventoryClient;
     }
 
-    @Override @Transactional
+    // NOT_SUPPORTED explicitly overrides the class-level @Transactional(readOnly = true)
+    // and suspends/skips any transaction for this method. This is intentional:
+    // getProduct() and reserveInventory() below are synchronous HTTP calls to other
+    // services (up to 2s connect + 3s read timeout EACH). Running them inside a
+    // transaction would hold a HikariCP connection from this service's pool idle for
+    // that whole round-trip; under concurrent load that exhausts the pool (default
+    // size 10) and produces multi-second waits for a connection on unrelated requests.
+    // repository.save() below already opens its own short-lived transaction
+    // internally (Spring Data JPA repository methods are transactional per-call),
+    // so no explicit @Transactional is needed here for the persistence step.
+    @Override
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public OrderResponse create(OrderRequest request) {
         ProductResponse product = getProduct(request.productId());
         reserveInventory(request.productId(), request.quantity());
@@ -55,7 +67,10 @@ public class OrderServiceImpl implements OrderService {
     @Override public List<OrderResponse> getAll() { return repository.findAll().stream().map(mapper::toResponse).toList(); }
     @Override public OrderResponse getById(Long id) { return mapper.toResponse(findOrder(id)); }
 
-    @Override @Transactional
+    // Same reasoning as create(): releaseInventory() is a network call to another
+    // service and must not run while this service holds a DB connection open.
+    @Override
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void delete(Long id) {
         Order order = findOrder(id);
         if (order.getStatus() == OrderStatus.CONFIRMED) releaseInventory(order.getProductId(), order.getQuantity());

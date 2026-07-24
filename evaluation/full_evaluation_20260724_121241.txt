@@ -1,0 +1,150 @@
+==================================================
+FULL BLUE-GREEN EVALUATION REPORT
+==================================================
+Run ID               : 20260724_121241
+Playbook executed     : deploy-blue-green.yml
+Deploy exit status    : 0
+Deploy wall time       : 60951 ms
+  (build + health-check + traffic switch + drain + cleanup —
+   this is NOT the same thing as downtime, see below)
+
+--- Nginx switch time only (upstream flip + reload, from Ansible) ---
+=========================================
+Blue-Green Traffic Switch Evaluation
+=========================================
+
+Active Environment : blue
+Target Environment : green
+
+Traffic Switch Time : 3546 ms
+
+=========================================
+
+--- Client-observed downtime (request-level probe, 20ms resolution) ---
+==============================================================
+Client-Observed Downtime Report
+==============================================================
+(approx. probe resolution: 1 ms — real outage boundaries fall within +/- this of the reported bounds)
+
+Endpoint: product
+  Total requests        : 3399
+  Failed requests       : 0
+  Success rate          : 100.0%
+  Outage windows        : 0
+  Downtime (lower bound): 0 ms
+  Downtime (upper bound): 0 ms  <- report this one
+  Longest single outage : 0 ms
+
+Endpoint: order
+  Total requests        : 3413
+  Failed requests       : 0
+  Success rate          : 100.0%
+  Outage windows        : 0
+  Downtime (lower bound): 0 ms
+  Downtime (upper bound): 0 ms  <- report this one
+  Longest single outage : 0 ms
+
+Endpoint: inventory
+  Total requests        : 3384
+  Failed requests       : 0
+  Success rate          : 100.0%
+  Outage windows        : 0
+  Downtime (lower bound): 0 ms
+  Downtime (upper bound): 0 ms  <- report this one
+  Longest single outage : 0 ms
+
+--------------------------------------------------------------
+Combined downtime across all endpoints, lower bound: 0 ms
+Combined downtime across all endpoints, upper bound: 0 ms
+==============================================================
+
+--- wrk2 sustained mixed-load summary (throughput + latency percentiles) ---
+Running 2m test @ http://127.0.0.1:8090
+  4 threads and 20 connections
+  Thread calibration: mean lat.: 49.164ms, rate sampling interval: 226ms
+  Thread calibration: mean lat.: 46.808ms, rate sampling interval: 175ms
+  Thread calibration: mean lat.: 49.177ms, rate sampling interval: 219ms
+  Thread calibration: mean lat.: 50.988ms, rate sampling interval: 238ms
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    32.51ms   40.57ms 254.72ms   88.55%
+    Req/Sec     7.25      9.73    28.00     76.06%
+  Latency Distribution (HdrHistogram - Recorded Latency)
+ 50.000%   17.42ms
+ 75.000%   38.27ms
+ 90.000%   82.37ms
+ 99.000%  203.13ms
+ 99.900%  250.49ms
+ 99.990%  254.85ms
+ 99.999%  254.85ms
+100.000%  254.85ms
+
+  Detailed Percentile spectrum:
+       Value   Percentile   TotalCount 1/(1-Percentile)
+
+       2.223     0.000000            1         1.00
+       4.779     0.100000          240         1.11
+       7.195     0.200000          475         1.25
+       9.775     0.300000          713         1.43
+      13.119     0.400000          950         1.67
+      17.423     0.500000         1188         2.00
+      20.047     0.550000         1307         2.22
+      22.927     0.600000         1425         2.50
+      26.943     0.650000         1545         2.86
+      32.015     0.700000         1663         3.33
+      38.335     0.750000         1782         4.00
+      41.951     0.775000         1841         4.44
+      45.567     0.800000         1903         5.00
+      49.727     0.825000         1960         5.71
+      57.983     0.850000         2019         6.67
+      68.031     0.875000         2080         8.00
+      74.623     0.887500         2108         8.89
+      82.367     0.900000         2138        10.00
+      89.663     0.912500         2168        11.43
+      99.199     0.925000         2197        13.33
+     108.095     0.937500         2228        16.00
+     114.367     0.943750         2242        17.78
+     123.647     0.950000         2257        20.00
+     133.887     0.956250         2272        22.86
+     139.775     0.962500         2286        26.67
+     149.503     0.968750         2301        32.00
+     159.103     0.971875         2309        35.56
+     161.663     0.975000         2316        40.00
+     169.855     0.978125         2324        45.71
+     175.231     0.981250         2331        53.33
+     184.191     0.984375         2338        64.00
+     187.263     0.985938         2342        71.11
+     192.639     0.987500         2346        80.00
+     199.935     0.989062         2350        91.43
+     205.823     0.990625         2353       106.67
+     215.039     0.992188         2357       128.00
+     217.343     0.992969         2359       142.22
+     219.519     0.993750         2361       160.00
+     221.823     0.994531         2363       182.86
+     228.607     0.995313         2364       213.33
+     233.983     0.996094         2366       256.00
+     235.519     0.996484         2367       284.44
+     240.255     0.996875         2369       320.00
+     240.255     0.997266         2369       365.71
+     240.383     0.997656         2370       426.67
+     241.663     0.998047         2371       512.00
+     241.663     0.998242         2371       568.89
+     249.215     0.998437         2372       640.00
+     249.215     0.998633         2372       731.43
+     250.495     0.998828         2373       853.33
+     250.495     0.999023         2373      1024.00
+     250.495     0.999121         2373      1137.78
+     250.623     0.999219         2374      1280.00
+     250.623     0.999316         2374      1462.86
+     250.623     0.999414         2374      1706.67
+     250.623     0.999512         2374      2048.00
+     250.623     0.999561         2374      2275.56
+     254.847     0.999609         2375      2560.00
+     254.847     1.000000         2375          inf
+#[Mean    =       32.514, StdDeviation   =       40.572]
+#[Max     =      254.720, Total count    =         2375]
+#[Buckets =           27, SubBuckets     =         2048]
+----------------------------------------------------------
+  2880 requests in 1.50m, 4.84MB read
+  Socket errors: connect 0, read 0, write 0, timeout 320
+Requests/sec:     31.98
+Transfer/sec:     54.99KB

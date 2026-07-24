@@ -7,6 +7,7 @@ import com.medicinecommerce.inventoryservice.exception.*;
 import com.medicinecommerce.inventoryservice.repository.InventoryRepository;
 import com.medicinecommerce.inventoryservice.service.InventoryService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestClientException;
@@ -19,7 +20,11 @@ public class InventoryServiceImpl implements InventoryService {
     private final InventoryRepository repository;
     private final ProductClient productClient;
     public InventoryServiceImpl(InventoryRepository repository, ProductClient productClient) { this.repository = repository; this.productClient = productClient; }
-    @Override @Transactional
+    // NOT_SUPPORTED: verifyProductExists() below is a network call to product-service.
+    // repository.save()/existsByProductId() each open their own short-lived
+    // transaction internally, so no explicit @Transactional is needed here.
+    @Override
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public InventoryResponse create(InventoryRequest request) {
         if (repository.existsByProductId(request.productId())) throw new DuplicateResourceException("Inventory already exists for product id: " + request.productId());
         verifyProductExists(request.productId());
@@ -28,7 +33,8 @@ public class InventoryServiceImpl implements InventoryService {
     @Override public List<InventoryResponse> getAll() { return repository.findAll().stream().map(this::toResponse).toList(); }
     @Override public InventoryResponse getById(Long id) { return toResponse(findById(id)); }
     @Override public InventoryResponse getByProductId(Long productId) { return toResponse(repository.findByProductId(productId).orElseThrow(() -> new ResourceNotFoundException("Inventory not found for product id: " + productId))); }
-    @Override @Transactional
+    @Override
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public InventoryResponse update(Long id, InventoryRequest request) {
         Inventory inventory = findById(id);
         if (!inventory.getProductId().equals(request.productId()) && repository.existsByProductId(request.productId())) throw new DuplicateResourceException("Inventory already exists for product id: " + request.productId());

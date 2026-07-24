@@ -72,7 +72,7 @@ echo "[2/5] Starting wrk2 sustained mixed load (${WRK2_RATE} req/s constant)..."
 WRK2_PID=""
 if [ -x "$WRK2_BIN" ]; then
   "$WRK2_BIN" -t"$WRK2_THREADS" -c"$WRK2_CONNECTIONS" -d"${WRK2_DURATION}s" -R"$WRK2_RATE" -L    -H "Connection: close" \
-    -s "$SCRIPT_DIR/scripts/mixed_workload.lua" \
+    -s "$SCRIPT_DIR/scripts/mixed_workload_multi_product.lua" \
     "$GATEWAY_URL" > "$WRK2_LOG" 2>&1 &
   WRK2_PID=$!
 else

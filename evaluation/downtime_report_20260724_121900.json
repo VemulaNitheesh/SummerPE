@@ -1,0 +1,32 @@
+{
+  "product": {
+    "total_requests": 3394,
+    "failed_requests": 0,
+    "success_rate_pct": 100.0,
+    "outage_count": 0,
+    "total_downtime_ms_tight_lower_bound": 0,
+    "total_downtime_ms_bounded_upper_bound": 0,
+    "longest_outage_ms_bounded": 0,
+    "outages": []
+  },
+  "inventory": {
+    "total_requests": 3388,
+    "failed_requests": 0,
+    "success_rate_pct": 100.0,
+    "outage_count": 0,
+    "total_downtime_ms_tight_lower_bound": 0,
+    "total_downtime_ms_bounded_upper_bound": 0,
+    "longest_outage_ms_bounded": 0,
+    "outages": []
+  },
+  "order": {
+    "total_requests": 3395,
+    "failed_requests": 0,
+    "success_rate_pct": 100.0,
+    "outage_count": 0,
+    "total_downtime_ms_tight_lower_bound": 0,
+    "total_downtime_ms_bounded_upper_bound": 0,
+    "longest_outage_ms_bounded": 0,
+    "outages": []
+  }
+}
