@@ -1,0 +1,229 @@
+=== 2026-08-02T15:40:03+05:30 ===
+inventory-service-green, CPU=0.39%, MEM=347.6MiB / 15.37GiB
+product-service-green, CPU=0.22%, MEM=372.1MiB / 15.37GiB
+internal-gateway-green, CPU=0.00%, MEM=10.11MiB / 15.37GiB
+order-service-green, CPU=0.41%, MEM=390.3MiB / 15.37GiB
+nginx, CPU=0.00%, MEM=14.7MiB / 15.37GiB
+mysql-db, CPU=1.02%, MEM=428.4MiB / 15.37GiB
+=== 2026-08-02T15:40:07+05:30 ===
+inventory-service-green, CPU=0.22%, MEM=347.9MiB / 15.37GiB
+product-service-green, CPU=0.33%, MEM=372.6MiB / 15.37GiB
+internal-gateway-green, CPU=0.00%, MEM=10.11MiB / 15.37GiB
+order-service-green, CPU=0.26%, MEM=390.4MiB / 15.37GiB
+nginx, CPU=0.00%, MEM=14.7MiB / 15.37GiB
+mysql-db, CPU=0.93%, MEM=428.9MiB / 15.37GiB
+=== 2026-08-02T15:40:11+05:30 ===
+inventory-service-green, CPU=0.74%, MEM=347.7MiB / 15.37GiB
+product-service-green, CPU=0.30%, MEM=372.1MiB / 15.37GiB
+internal-gateway-green, CPU=0.00%, MEM=10.11MiB / 15.37GiB
+order-service-green, CPU=0.29%, MEM=390.2MiB / 15.37GiB
+nginx, CPU=0.00%, MEM=14.7MiB / 15.37GiB
+mysql-db, CPU=1.00%, MEM=428.4MiB / 15.37GiB
+=== 2026-08-02T15:40:15+05:30 ===
+inventory-service-green, CPU=85.43%, MEM=383.4MiB / 15.37GiB
+product-service-green, CPU=100.28%, MEM=387.4MiB / 15.37GiB
+internal-gateway-green, CPU=7.19%, MEM=12.32MiB / 15.37GiB
+order-service-green, CPU=79.18%, MEM=414.3MiB / 15.37GiB
+nginx, CPU=7.35%, MEM=16.13MiB / 15.37GiB
+mysql-db, CPU=14.53%, MEM=469.9MiB / 15.37GiB
+=== 2026-08-02T15:40:19+05:30 ===
+inventory-service-green, CPU=97.85%, MEM=388.4MiB / 15.37GiB
+product-service-green, CPU=91.72%, MEM=390.8MiB / 15.37GiB
+internal-gateway-green, CPU=5.99%, MEM=11.43MiB / 15.37GiB
+order-service-green, CPU=44.18%, MEM=417.7MiB / 15.37GiB
+nginx, CPU=5.94%, MEM=16.62MiB / 15.37GiB
+mysql-db, CPU=10.80%, MEM=469.3MiB / 15.37GiB
+=== 2026-08-02T15:40:23+05:30 ===
+inventory-service-green, CPU=70.29%, MEM=394.2MiB / 15.37GiB
+product-service-green, CPU=63.43%, MEM=393.9MiB / 15.37GiB
+internal-gateway-green, CPU=5.43%, MEM=11.73MiB / 15.37GiB
+order-service-green, CPU=36.92%, MEM=422.1MiB / 15.37GiB
+nginx, CPU=5.61%, MEM=15.88MiB / 15.37GiB
+mysql-db, CPU=6.50%, MEM=469.1MiB / 15.37GiB
+=== 2026-08-02T15:40:27+05:30 ===
+inventory-service-green, CPU=65.47%, MEM=396.1MiB / 15.37GiB
+product-service-green, CPU=49.55%, MEM=395.9MiB / 15.37GiB
+internal-gateway-green, CPU=6.05%, MEM=11.41MiB / 15.37GiB
+order-service-green, CPU=29.54%, MEM=424MiB / 15.37GiB
+nginx, CPU=5.53%, MEM=16.14MiB / 15.37GiB
+mysql-db, CPU=6.10%, MEM=469.3MiB / 15.37GiB
+=== 2026-08-02T15:40:31+05:30 ===
+inventory-service-green, CPU=65.91%, MEM=402.8MiB / 15.37GiB
+product-service-green, CPU=58.13%, MEM=396.9MiB / 15.37GiB
+internal-gateway-green, CPU=5.52%, MEM=11.82MiB / 15.37GiB
+order-service-green, CPU=36.12%, MEM=426.2MiB / 15.37GiB
+nginx, CPU=5.33%, MEM=15.93MiB / 15.37GiB
+mysql-db, CPU=9.18%, MEM=469.5MiB / 15.37GiB
+=== 2026-08-02T15:40:35+05:30 ===
+inventory-service-green, CPU=38.73%, MEM=398.8MiB / 15.37GiB
+product-service-green, CPU=96.96%, MEM=410.8MiB / 15.37GiB
+internal-gateway-green, CPU=5.40%, MEM=12.04MiB / 15.37GiB
+order-service-green, CPU=23.13%, MEM=427MiB / 15.37GiB
+nginx, CPU=4.79%, MEM=15.9MiB / 15.37GiB
+mysql-db, CPU=12.81%, MEM=469.3MiB / 15.37GiB
+=== 2026-08-02T15:40:39+05:30 ===
+order-service-blue, CPU=172.30%, MEM=141.8MiB / 15.37GiB
+product-service-blue, CPU=231.41%, MEM=120.3MiB / 15.37GiB
+internal-gateway-blue, CPU=0.00%, MEM=2.93MiB / 15.37GiB
+inventory-service-blue, CPU=187.79%, MEM=149.5MiB / 15.37GiB
+inventory-service-green, CPU=48.03%, MEM=406.7MiB / 15.37GiB
+product-service-green, CPU=53.10%, MEM=413MiB / 15.37GiB
+internal-gateway-green, CPU=5.25%, MEM=11.63MiB / 15.37GiB
+order-service-green, CPU=17.49%, MEM=436MiB / 15.37GiB
+nginx, CPU=4.98%, MEM=15.88MiB / 15.37GiB
+mysql-db, CPU=6.88%, MEM=469.6MiB / 15.37GiB
+=== 2026-08-02T15:40:43+05:30 ===
+order-service-blue, CPU=164.19%, MEM=166.1MiB / 15.37GiB
+product-service-blue, CPU=201.32%, MEM=182.8MiB / 15.37GiB
+internal-gateway-blue, CPU=0.00%, MEM=2.93MiB / 15.37GiB
+inventory-service-blue, CPU=194.54%, MEM=170.3MiB / 15.37GiB
+inventory-service-green, CPU=56.10%, MEM=411.2MiB / 15.37GiB
+product-service-green, CPU=40.36%, MEM=414.1MiB / 15.37GiB
+internal-gateway-green, CPU=5.28%, MEM=12.36MiB / 15.37GiB
+order-service-green, CPU=27.03%, MEM=436.9MiB / 15.37GiB
+nginx, CPU=4.94%, MEM=15.65MiB / 15.37GiB
+mysql-db, CPU=7.93%, MEM=470.2MiB / 15.37GiB
+=== 2026-08-02T15:40:48+05:30 ===
+order-service-blue, CPU=220.37%, MEM=246.8MiB / 15.37GiB
+product-service-blue, CPU=191.78%, MEM=215.2MiB / 15.37GiB
+internal-gateway-blue, CPU=0.00%, MEM=2.93MiB / 15.37GiB
+inventory-service-blue, CPU=181.08%, MEM=229.2MiB / 15.37GiB
+inventory-service-green, CPU=54.85%, MEM=407.8MiB / 15.37GiB
+product-service-green, CPU=24.21%, MEM=406.2MiB / 15.37GiB
+internal-gateway-green, CPU=5.08%, MEM=11.38MiB / 15.37GiB
+order-service-green, CPU=12.33%, MEM=428.5MiB / 15.37GiB
+nginx, CPU=4.85%, MEM=15.2MiB / 15.37GiB
+mysql-db, CPU=6.35%, MEM=470.1MiB / 15.37GiB
+=== 2026-08-02T15:40:52+05:30 ===
+order-service-blue, CPU=124.72%, MEM=289.7MiB / 15.37GiB
+product-service-blue, CPU=149.41%, MEM=279.9MiB / 15.37GiB
+internal-gateway-blue, CPU=0.00%, MEM=2.93MiB / 15.37GiB
+inventory-service-blue, CPU=192.15%, MEM=280.4MiB / 15.37GiB
+inventory-service-green, CPU=42.31%, MEM=401.7MiB / 15.37GiB
+product-service-green, CPU=26.67%, MEM=413.8MiB / 15.37GiB
+internal-gateway-green, CPU=4.56%, MEM=11.22MiB / 15.37GiB
+order-service-green, CPU=15.18%, MEM=429.1MiB / 15.37GiB
+nginx, CPU=5.48%, MEM=16.16MiB / 15.37GiB
+mysql-db, CPU=7.06%, MEM=476.2MiB / 15.37GiB
+=== 2026-08-02T15:40:56+05:30 ===
+order-service-blue, CPU=224.50%, MEM=349.7MiB / 15.37GiB
+product-service-blue, CPU=206.85%, MEM=314.6MiB / 15.37GiB
+internal-gateway-blue, CPU=0.00%, MEM=2.93MiB / 15.37GiB
+inventory-service-blue, CPU=231.78%, MEM=312.4MiB / 15.37GiB
+inventory-service-green, CPU=24.94%, MEM=405.3MiB / 15.37GiB
+product-service-green, CPU=37.45%, MEM=408MiB / 15.37GiB
+internal-gateway-green, CPU=4.98%, MEM=11.36MiB / 15.37GiB
+order-service-green, CPU=18.33%, MEM=445.8MiB / 15.37GiB
+nginx, CPU=4.55%, MEM=15.69MiB / 15.37GiB
+mysql-db, CPU=8.62%, MEM=476.8MiB / 15.37GiB
+=== 2026-08-02T15:41:00+05:30 ===
+order-service-blue, CPU=2.06%, MEM=383.7MiB / 15.37GiB
+product-service-blue, CPU=13.06%, MEM=343MiB / 15.37GiB
+internal-gateway-blue, CPU=0.00%, MEM=2.93MiB / 15.37GiB
+inventory-service-blue, CPU=0.27%, MEM=333.3MiB / 15.37GiB
+inventory-service-green, CPU=22.55%, MEM=405.2MiB / 15.37GiB
+product-service-green, CPU=49.19%, MEM=428.6MiB / 15.37GiB
+internal-gateway-green, CPU=5.34%, MEM=11.69MiB / 15.37GiB
+order-service-green, CPU=66.94%, MEM=450.5MiB / 15.37GiB
+nginx, CPU=5.20%, MEM=16.18MiB / 15.37GiB
+mysql-db, CPU=9.33%, MEM=477MiB / 15.37GiB
+=== 2026-08-02T15:41:04+05:30 ===
+order-service-blue, CPU=0.24%, MEM=389.3MiB / 15.37GiB
+product-service-blue, CPU=0.27%, MEM=339.5MiB / 15.37GiB
+internal-gateway-blue, CPU=0.00%, MEM=2.93MiB / 15.37GiB
+inventory-service-blue, CPU=0.18%, MEM=333.3MiB / 15.37GiB
+inventory-service-green, CPU=48.75%, MEM=407MiB / 15.37GiB
+product-service-green, CPU=23.49%, MEM=422.6MiB / 15.37GiB
+internal-gateway-green, CPU=5.59%, MEM=12.07MiB / 15.37GiB
+order-service-green, CPU=35.01%, MEM=445.6MiB / 15.37GiB
+nginx, CPU=6.39%, MEM=16.21MiB / 15.37GiB
+mysql-db, CPU=13.64%, MEM=477MiB / 15.37GiB
+=== 2026-08-02T15:41:08+05:30 ===
+order-service-blue, CPU=90.54%, MEM=396.9MiB / 15.37GiB
+product-service-blue, CPU=0.15%, MEM=343.7MiB / 15.37GiB
+internal-gateway-blue, CPU=4.08%, MEM=3.203MiB / 15.37GiB
+inventory-service-blue, CPU=34.11%, MEM=337.7MiB / 15.37GiB
+inventory-service-green, CPU=22.39%, MEM=406.8MiB / 15.37GiB
+product-service-green, CPU=54.85%, MEM=431.3MiB / 15.37GiB
+internal-gateway-green, CPU=4.72%, MEM=11.66MiB / 15.37GiB
+order-service-green, CPU=28.28%, MEM=445.7MiB / 15.37GiB
+nginx, CPU=4.79%, MEM=15.96MiB / 15.37GiB
+mysql-db, CPU=10.31%, MEM=477.5MiB / 15.37GiB
+=== 2026-08-02T15:41:12+05:30 ===
+order-service-blue, CPU=48.68%, MEM=400.7MiB / 15.37GiB
+product-service-blue, CPU=34.81%, MEM=346.5MiB / 15.37GiB
+internal-gateway-blue, CPU=4.33%, MEM=4.465MiB / 15.37GiB
+inventory-service-blue, CPU=36.08%, MEM=341.2MiB / 15.37GiB
+inventory-service-green, CPU=0.09%, MEM=406.2MiB / 15.37GiB
+product-service-green, CPU=0.29%, MEM=422MiB / 15.37GiB
+internal-gateway-green, CPU=0.00%, MEM=10.36MiB / 15.37GiB
+order-service-green, CPU=0.66%, MEM=448.1MiB / 15.37GiB
+nginx, CPU=4.26%, MEM=16.01MiB / 15.37GiB
+mysql-db, CPU=1.65%, MEM=477.2MiB / 15.37GiB
+=== 2026-08-02T15:41:16+05:30 ===
+order-service-blue, CPU=21.80%, MEM=406.4MiB / 15.37GiB
+product-service-blue, CPU=20.57%, MEM=349.1MiB / 15.37GiB
+internal-gateway-blue, CPU=3.64%, MEM=3.723MiB / 15.37GiB
+inventory-service-blue, CPU=22.55%, MEM=344.4MiB / 15.37GiB
+inventory-service-green, CPU=5.44%, MEM=406.7MiB / 15.37GiB
+product-service-green, CPU=4.49%, MEM=421.9MiB / 15.37GiB
+internal-gateway-green, CPU=0.00%, MEM=10.36MiB / 15.37GiB
+order-service-green, CPU=0.12%, MEM=447.9MiB / 15.37GiB
+nginx, CPU=3.62%, MEM=16.8MiB / 15.37GiB
+mysql-db, CPU=1.43%, MEM=477MiB / 15.37GiB
+=== 2026-08-02T15:41:20+05:30 ===
+order-service-blue, CPU=21.56%, MEM=406MiB / 15.37GiB
+product-service-blue, CPU=19.50%, MEM=350.9MiB / 15.37GiB
+internal-gateway-blue, CPU=2.88%, MEM=3.922MiB / 15.37GiB
+inventory-service-blue, CPU=17.89%, MEM=345.5MiB / 15.37GiB
+nginx, CPU=3.28%, MEM=15.85MiB / 15.37GiB
+mysql-db, CPU=1.64%, MEM=477.1MiB / 15.37GiB
+=== 2026-08-02T15:41:24+05:30 ===
+order-service-blue, CPU=22.73%, MEM=407.9MiB / 15.37GiB
+product-service-blue, CPU=36.29%, MEM=351.9MiB / 15.37GiB
+internal-gateway-blue, CPU=3.16%, MEM=4.328MiB / 15.37GiB
+inventory-service-blue, CPU=20.25%, MEM=346.8MiB / 15.37GiB
+nginx, CPU=3.12%, MEM=15.9MiB / 15.37GiB
+mysql-db, CPU=1.23%, MEM=477.1MiB / 15.37GiB
+=== 2026-08-02T15:41:28+05:30 ===
+order-service-blue, CPU=0.11%, MEM=407.7MiB / 15.37GiB
+product-service-blue, CPU=0.15%, MEM=351.7MiB / 15.37GiB
+internal-gateway-blue, CPU=0.00%, MEM=3.5MiB / 15.37GiB
+inventory-service-blue, CPU=3.77%, MEM=346.3MiB / 15.37GiB
+nginx, CPU=0.00%, MEM=15.06MiB / 15.37GiB
+mysql-db, CPU=0.19%, MEM=477.1MiB / 15.37GiB
+=== 2026-08-02T15:41:32+05:30 ===
+order-service-blue, CPU=4.19%, MEM=408MiB / 15.37GiB
+product-service-blue, CPU=0.07%, MEM=351.4MiB / 15.37GiB
+internal-gateway-blue, CPU=0.00%, MEM=3.027MiB / 15.37GiB
+inventory-service-blue, CPU=0.06%, MEM=345.9MiB / 15.37GiB
+nginx, CPU=0.00%, MEM=15.05MiB / 15.37GiB
+mysql-db, CPU=0.16%, MEM=476.9MiB / 15.37GiB
+=== 2026-08-02T15:41:36+05:30 ===
+order-service-blue, CPU=0.06%, MEM=407.7MiB / 15.37GiB
+product-service-blue, CPU=0.06%, MEM=351.5MiB / 15.37GiB
+internal-gateway-blue, CPU=0.00%, MEM=3.027MiB / 15.37GiB
+inventory-service-blue, CPU=0.07%, MEM=345.9MiB / 15.37GiB
+nginx, CPU=0.00%, MEM=15.05MiB / 15.37GiB
+mysql-db, CPU=0.15%, MEM=477.2MiB / 15.37GiB
+=== 2026-08-02T15:41:41+05:30 ===
+order-service-blue, CPU=0.06%, MEM=407.7MiB / 15.37GiB
+product-service-blue, CPU=0.06%, MEM=351.5MiB / 15.37GiB
+internal-gateway-blue, CPU=0.00%, MEM=3.027MiB / 15.37GiB
+inventory-service-blue, CPU=0.05%, MEM=346.1MiB / 15.37GiB
+nginx, CPU=0.00%, MEM=15.05MiB / 15.37GiB
+mysql-db, CPU=0.13%, MEM=477.1MiB / 15.37GiB
+=== 2026-08-02T15:41:45+05:30 ===
+order-service-blue, CPU=0.34%, MEM=407.7MiB / 15.37GiB
+product-service-blue, CPU=0.27%, MEM=351.6MiB / 15.37GiB
+internal-gateway-blue, CPU=0.00%, MEM=3.027MiB / 15.37GiB
+inventory-service-blue, CPU=0.24%, MEM=346MiB / 15.37GiB
+nginx, CPU=0.00%, MEM=15.05MiB / 15.37GiB
+mysql-db, CPU=0.86%, MEM=477.1MiB / 15.37GiB
+=== 2026-08-02T15:41:49+05:30 ===
+order-service-blue, CPU=0.46%, MEM=407.9MiB / 15.37GiB
+product-service-blue, CPU=4.41%, MEM=351.7MiB / 15.37GiB
+internal-gateway-blue, CPU=0.00%, MEM=3.027MiB / 15.37GiB
+inventory-service-blue, CPU=3.86%, MEM=346.3MiB / 15.37GiB
+nginx, CPU=0.00%, MEM=15.04MiB / 15.37GiB
+mysql-db, CPU=0.94%, MEM=476.9MiB / 15.37GiB
