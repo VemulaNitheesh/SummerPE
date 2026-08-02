@@ -1,0 +1,105 @@
+
+PLAY [Blue-Green Traffic Switch Only (role-based, with automatic rollback)] ****
+
+TASK [Detect active and target environment] ************************************
+included: detect_environment for localhost
+
+TASK [detect_environment : Read upstream configuration] ************************
+[WARNING]: Host 'localhost' is using the discovered Python interpreter at '/usr/bin/python3.12', but future installation of another Python interpreter could cause a different interpreter to be discovered. See https://docs.ansible.com/ansible-core/2.20/reference_appendices/interpreter_discovery.html for more information.
+ok: [localhost]
+
+TASK [detect_environment : Decode upstream configuration] **********************
+ok: [localhost]
+
+TASK [detect_environment : Determine active environment] ***********************
+ok: [localhost]
+
+TASK [detect_environment : Determine target environment] ***********************
+ok: [localhost]
+
+TASK [detect_environment : Display detected environments] **********************
+ok: [localhost] => {
+    "msg": [
+        "Active Environment : blue",
+        "Target Environment : green"
+    ]
+}
+
+TASK [Verify green is healthy before switching] ********************************
+included: health_check for localhost
+
+TASK [health_check : Wait for Product Service to become healthy (green)] *******
+FAILED - RETRYING: [localhost]: Wait for Product Service to become healthy (green) (1 retries left).
+[ERROR]: Task failed: Module failed: non-zero return code
+Origin: /home/iiitb/medicine-ecommerce/SummerPE/ansible/roles/health_check/tasks/main.yml:9:3
+
+7 # Uses (from vars/thresholds.yml): health_check_retries, health_check_delay
+8
+9 - name: Wait for Product Service to become healthy ({{ check_environment }})
+    ^ column 3
+
+fatal: [localhost]: FAILED! => {"attempts": 1, "changed": false, "cmd": ["docker", "inspect", "product-service-green", "--format={{.State.Health.Status}}"], "delta": "0:00:00.020642", "end": "2026-07-27 23:36:34.306171", "failed_when_result": true, "msg": "non-zero return code", "rc": 1, "start": "2026-07-27 23:36:34.285529", "stderr": "error: no such object: product-service-green", "stderr_lines": ["error: no such object: product-service-green"], "stdout": "", "stdout_lines": []}
+
+TASK [Switch failed - triggering automatic rollback] ***************************
+ok: [localhost] => {
+    "msg": "Switch to green failed (Wait for Product Service to become healthy (green)). Rolling traffic back to blue."
+}
+
+TASK [Roll back to blue] *******************************************************
+included: rollback for localhost
+
+TASK [rollback : Verify rollback target containers are running] ****************
+ok: [localhost]
+
+TASK [rollback : Abort rollback if target environment is not available] ********
+skipping: [localhost]
+
+TASK [rollback : Revert upstream configuration to blue] ************************
+ok: [localhost]
+
+TASK [rollback : Wait for Nginx container to be running] ***********************
+ok: [localhost]
+
+TASK [rollback : Reload Nginx after rollback] **********************************
+changed: [localhost]
+
+TASK [rollback : Verify Product API after rollback] ****************************
+ok: [localhost]
+
+TASK [rollback : Verify Inventory API after rollback] **************************
+ok: [localhost]
+
+TASK [rollback : Verify Order API after rollback] ******************************
+ok: [localhost]
+
+TASK [rollback : Stop failed environment stack (green)] ************************
+changed: [localhost]
+
+TASK [rollback : Record rollback timestamp] ************************************
+ok: [localhost]
+
+TASK [rollback : Save rollback evaluation report] ******************************
+changed: [localhost]
+
+TASK [rollback : Rollback completed] *******************************************
+ok: [localhost] => {
+    "msg": [
+        "Rollback completed successfully.",
+        "Active environment is now : blue"
+    ]
+}
+
+TASK [Fail the play after rollback] ********************************************
+[ERROR]: Task failed: Action failed: Traffic switch aborted and rolled back to blue. Check evaluation/rollback_results.txt for the rollback record.
+Origin: /home/iiitb/medicine-ecommerce/SummerPE/ansible/switch.yml:70:11
+
+68             failed_environment: "{{ target_environment }}"
+69
+70         - name: Fail the play after rollback
+             ^ column 11
+
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Traffic switch aborted and rolled back to blue. Check evaluation/rollback_results.txt for the rollback record."}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=20   changed=3    unreachable=0    failed=1    skipped=1    rescued=1    ignored=0   
+

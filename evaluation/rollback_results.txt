@@ -1,0 +1,9 @@
+=========================================
+Blue-Green Rollback Evaluation
+=========================================
+
+Rolled back to     : blue
+Failed environment : green
+Rollback timestamp : 1785175598714 (ms epoch)
+
+=========================================
